@@ -1,44 +1,31 @@
-export type TickerUpdateMessage = {
-  stream: string;
-  data: {
-    e: "ticker";
-    c?: string;
-    h?: string;
-    l?: string;
-    v?: string;
-    V?: string;
-    s?: string;
-    id: string;
-  };
-};
+// WebSocket message types flowing:
+//   Matcher Service → Redis pub/sub → Realtime Service → Browser
 
 export type DepthUpdateMessage = {
   stream: string;
   data: {
-    b?: [string, string][];
-    a?: [string, string][];
+    b?: [string, string][];   // incremental bid levels — "0" qty means remove
+    a?: [string, string][];   // incremental ask levels — "0" qty means remove
     e: "depth";
   };
 };
 
-export type TradeAddedMessage = {
+export type TradeMessage = {
   stream: string;
   data: {
     e: "trade";
-    t: string; // Trade ID
-    T: number; // Trade timestamp (epoch ms UTC)
-    m: boolean; // Is buyer maker
-    p: string; // Price
-    q: string; // Quantity
-    s: string; // Symbol
+    t: string;       // matchId
+    T: number;       // timestamp (epoch ms)
+    m: boolean;      // isBuyerMaker
+    p: string;       // price
+    q: string;       // quantity
+    s: string;       // symbol (e.g. "RIL_INR")
   };
 };
-export type WsMessage =
-  | TickerUpdateMessage
-  | DepthUpdateMessage
-  | TradeAddedMessage;
 
-export const SUBSCRIBE = "SUBSCRIBE";
+export type WsMessage = DepthUpdateMessage | TradeMessage;
+
+export const SUBSCRIBE   = "SUBSCRIBE";
 export const UNSUBSCRIBE = "UNSUBSCRIBE";
 
 export type SubscribeMessage = {
@@ -51,6 +38,5 @@ export type UnsubscribeMessage = {
   params: string[];
 };
 
-export type IncomingMessage = SubscribeMessage | UnsubscribeMessage;
-
-export type OutgoingMessage = TickerUpdateMessage | DepthUpdateMessage;
+export type IncomingMessage  = SubscribeMessage | UnsubscribeMessage;
+export type OutgoingMessage  = DepthUpdateMessage | TradeMessage;

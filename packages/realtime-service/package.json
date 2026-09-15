@@ -1,0 +1,25 @@
+{
+  "name": "@stockx/realtime-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@stockx/shared": "*",
+    "dotenv": "^17.4.2",
+    "redis": "^5.11.0",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.3.3"
+  }
+}

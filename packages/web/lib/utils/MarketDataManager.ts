@@ -1,125 +1,123 @@
-import { Ticker } from "@exchange-lab/shared";
+"use client";
 
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_WS_BASE_URL || "ws://localhost:3001";
+// ---------------------------------------------------------------------------
+// MarketDataManager — singleton WebSocket client
+//
+// Bridges the browser WebSocket connection to the Realtime Service (port 3002).
+//
+// Components subscribe by calling registerCallback(eventType, id, fn) and
+// send messages (SUBSCRIBE / UNSUBSCRIBE) via sendMessage().
+//
+// Supported stream event types emitted by the Matcher Service:
+//   "trade"  — new trade match (price, qty, symbol, matchId, timestamp)
+//   "depth"  — incremental order book update (bids / asks delta)
+// ---------------------------------------------------------------------------
+
+const WS_URL =
+  typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_WS_BASE_URL ?? "ws://localhost:3002")
+    : "ws://localhost:3002";
 
 type EventType = "trade" | "depth" | string;
 type SubscriberId = string;
-type CallbackFunction = (data: any) => void;
+type CallbackFn = (data: any) => void;
 
 export class MarketDataManager {
   private ws: WebSocket | null = null;
   private static instance: MarketDataManager;
-  private bufferedMessages: object[] = [];
-  private msgId: number = 1;
-
-  private callbacks: Map<EventType, Map<SubscriberId, CallbackFunction>> =
-    new Map();
+  private buffered: object[] = [];
+  private msgId = 1;
+  private callbacks: Map<EventType, Map<SubscriberId, CallbackFn>> = new Map();
 
   private constructor() {
     this.connect();
   }
 
   public static getInstance(): MarketDataManager {
-    if (!this.instance) {
-      this.instance = new MarketDataManager();
-    }
+    if (!this.instance) this.instance = new MarketDataManager();
     return this.instance;
   }
 
   private connect() {
-    this.ws = new WebSocket(BASE_URL);
+    this.ws = new WebSocket(WS_URL);
 
     this.ws.onopen = () => {
-      // Flush buffered messages once connected
-      while (this.bufferedMessages.length > 0) {
-        const msg = this.bufferedMessages.shift();
+      // Flush any messages that arrived before the connection was open
+      while (this.buffered.length > 0) {
+        const msg = this.buffered.shift();
         if (msg) this.ws?.send(JSON.stringify(msg));
       }
     };
-    this.ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
 
-        const type = message?.data?.e as EventType | undefined;
+    this.ws.onmessage = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        const type = msg?.data?.e as EventType | undefined;
         if (!type) return;
 
-        const typeCallbacks = this.callbacks.get(type);
+        const cbs = this.callbacks.get(type);
+        if (!cbs || cbs.size === 0) return;
 
-        if (!typeCallbacks || typeCallbacks.size === 0) return;
-
-        let parsedPayload: any = null;
+        let payload: any = null;
 
         if (type === "trade") {
-          parsedPayload = {
-            id: message.data.t,
-            lastPrice: message.data.p,
-            symbol: message.data.s,
-            price: message.data.p,
-            quantity: message.data.q,
-            isBuyerMaker: message.data.m,
-            timestamp: message.data.T,
-          } as Partial<Ticker>;
+          // Map the wire format (t, p, q, s, T, m) to a friendlier shape
+          payload = {
+            id:           msg.data.t,            // matchId
+            matchId:      msg.data.t,
+            lastPrice:    msg.data.p,
+            price:        msg.data.p,
+            quantity:     msg.data.q,
+            symbol:       msg.data.s,
+            isBuyerMaker: msg.data.m,
+            timestamp:    msg.data.T,
+          };
         } else if (type === "depth") {
           const symbol =
-            typeof message?.stream === "string"
-              ? message.stream.split("@")[1]
+            typeof msg?.stream === "string"
+              ? msg.stream.split("@")[1]
               : undefined;
-          parsedPayload = {
+          payload = {
             symbol,
-            bids: message.data.b,
-            asks: message.data.a,
+            bids: msg.data.b ?? [],
+            asks: msg.data.a ?? [],
           };
         }
 
-        if (parsedPayload) {
-          typeCallbacks.forEach((callback) => callback(parsedPayload));
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        if (payload) cbs.forEach((cb) => cb(payload));
+      } catch (err) {
+        console.error("[MarketDataManager] Failed to parse WS message:", err);
       }
     };
+
     this.ws.onclose = () => {
-      console.warn("WebSocket disconnected. Attempting to reconnect...");
-      // Simple auto-reconnect logic
-      setTimeout(() => this.connect(), 3000);
+      console.warn("[MarketDataManager] WebSocket closed — reconnecting in 3 s");
+      setTimeout(() => this.connect(), 3_000);
     };
 
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    this.ws.onerror = (err) => {
+      console.error("[MarketDataManager] WebSocket error:", err);
     };
   }
 
   public sendMessage(message: object) {
-    const messageToSend = {
-      ...message,
-      id: this.msgId++,
-    };
+    const msg = { ...message, id: this.msgId++ };
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(messageToSend));
+      this.ws.send(JSON.stringify(msg));
     } else {
-      this.bufferedMessages.push(messageToSend);
+      this.buffered.push(msg);
     }
   }
 
-  public registerCallback(
-    type: EventType,
-    id: SubscriberId,
-    callback: CallbackFunction,
-  ) {
-    if (!this.callbacks.has(type)) {
-      this.callbacks.set(type, new Map());
-    }
-    this.callbacks.get(type)?.set(id, callback);
+  public registerCallback(type: EventType, id: SubscriberId, cb: CallbackFn) {
+    if (!this.callbacks.has(type)) this.callbacks.set(type, new Map());
+    this.callbacks.get(type)!.set(id, cb);
   }
 
   public deRegisterCallback(type: EventType, id: SubscriberId) {
-    const typeCallbacks = this.callbacks.get(type);
-    if (typeCallbacks) {
-      typeCallbacks.delete(id);
-      if (typeCallbacks.size === 0) {
-        this.callbacks.delete(type);
-      }
-    }
+    const cbs = this.callbacks.get(type);
+    if (!cbs) return;
+    cbs.delete(id);
+    if (cbs.size === 0) this.callbacks.delete(type);
   }
 }

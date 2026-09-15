@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTickers, getKlines } from "@/lib/utils/apiClient";
-import type { Ticker } from "@exchange-lab/shared";
+import { getTickers, getPriceHistory } from "@/lib/utils/apiClient";
+import type { Ticker } from "@stockx/shared";
 import { Sparkline } from "@/components/markets/Sparkline";
 import { Search, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -177,8 +177,8 @@ function MarketCard({
   useEffect(() => {
     const endTime = Date.now();
     const startTime = endTime - 7 * 24 * 60 * 60 * 1000;
-    getKlines(ticker.symbol, "1h", startTime, endTime)
-      .then((klines) => setCloses(klines.map((k) => Number(k.close))))
+    getPriceHistory(ticker.symbol, 200)
+      .then((trades) => setCloses(trades.map((t) => Number(t.price)).reverse()))
       .catch(() => setCloses([]));
   }, [ticker.symbol]);
 
@@ -257,8 +257,8 @@ function MarketRow({
   useEffect(() => {
     const endTime = Date.now();
     const startTime = endTime - 7 * 24 * 60 * 60 * 1000;
-    getKlines(ticker.symbol, "1h", startTime, endTime)
-      .then((klines) => setCloses(klines.map((k) => Number(k.close))))
+    getPriceHistory(ticker.symbol, 200)
+      .then((trades) => setCloses(trades.map((t) => Number(t.price)).reverse()))
       .catch(() => setCloses([]));
   }, [ticker.symbol]);
 

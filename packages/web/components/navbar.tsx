@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import ProfileMenu from "@/components/profileMenu";
 import { useSession } from "next-auth/react";
 import { getTickers } from "@/lib/utils/apiClient";
-import type { Ticker } from "@exchange-lab/shared";
+import type { Ticker } from "@stockx/shared";
 
 export default function Navbar() {
   const { data: session, status } = useSession();

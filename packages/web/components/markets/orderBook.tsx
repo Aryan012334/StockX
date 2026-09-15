@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { DEPTH, type EngineResponse } from "@exchange-lab/shared";
-import { getDepth, getTicker } from "@/lib/utils/apiClient";
-import { MarketDataManager } from "@/lib/utils/MarketDataManager";
+﻿import { useEffect, useRef, useState } from "react";
+import { DEPTH, type EngineResponse }  from "@stockx/shared";
+import { getDepth }                    from "@/lib/utils/apiClient";
+import { MarketDataManager }           from "@/lib/utils/MarketDataManager";
 
 type DepthPayload = Extract<EngineResponse, { type: typeof DEPTH }>["payload"];
 type Level = [string, string];
@@ -118,20 +118,13 @@ export function OrderBook({ market }: { market: string }) {
 
     async function loadSnapshot() {
       try {
-        const [depthData, ticker] = await Promise.all([
+        const [depthData] = await Promise.all([
           getDepth(market),
-          getTicker(market),
         ]);
         if (!isMounted) return;
 
         //@ts-expect-error - REST response shape vs shared DepthPayload
         setDepth(depthData);
-        const initialPrice = Number(ticker.lastPrice);
-        if (!Number.isNaN(initialPrice)) {
-          lastPriceRef.current = initialPrice;
-          setLastPrice(initialPrice);
-        }
-
         snapshotReadyRef.current = true;
         const queued = pendingUpdatesRef.current;
         pendingUpdatesRef.current = [];

@@ -1,184 +1,141 @@
+# StockX — Docker Compose
+# Services map directly to the CortexCookie architecture:
+#
+#   postgres          — settlement DB (plain PostgreSQL 17, no TimescaleDB)
+#   redis             — message bus (API Gateway ↔ Matcher, pub/sub for Realtime)
+#   api-gateway       — single entry point; routes to matcher and DB
+#   matcher-service   — in-memory order books, price-time priority matching
+#   execution-service — atomic settlement, idempotency, Order/Trade persistence
+#   realtime-service  — WebSocket server; bridges Redis pub/sub to browsers
+#   web               — Next.js frontend
+
 services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+
   postgres:
-    image: timescale/timescaledb:latest-pg17
-    container_name: xchg-postgres
-    command:
-      - postgres
-      - -c
-      - shared_preload_libraries=timescaledb
-    env_file:
-      - .env
+    image: postgres:17-alpine
+    container_name: stockx-postgres
+    env_file: .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_USER:     ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB:       ${POSTGRES_DB}
     volumes:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
+      test:         ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval:     30s
+      timeout:      5s
+      retries:      5
       start_period: 10s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
     networks:
-      - xchg
+      - stockx
 
   redis:
     image: redis:8-alpine
-    container_name: xchg-redis
+    container_name: stockx-redis
     command:
       - redis-server
-      - --save
-      - ""
-      - --appendonly
-      - "no"
+      - --save ""
+      - --appendonly no
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
+      test:         ["CMD", "redis-cli", "ping"]
+      interval:     30s
+      timeout:      5s
+      retries:      5
       start_period: 10s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
     networks:
-      - xchg
+      - stockx
 
-  api:
+  # ---------------------------------------------------------------------------
+  # Application services
+  # ---------------------------------------------------------------------------
+
+  api-gateway:
     build:
-      context: .
-      dockerfile: packages/api/Dockerfile
-    container_name: xchg-api
-    env_file:
-      - .env
+      context:    .
+      dockerfile: packages/api-gateway/Dockerfile
+    container_name: stockx-api-gateway
+    env_file: .env
     environment:
       PORT: 3001
     ports:
       - "127.0.0.1:3001:3001"
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
     networks:
-      - xchg
+      - stockx
 
-  engine:
+  matcher-service:
     build:
-      context: .
-      dockerfile: packages/engine/Dockerfile
-    container_name: xchg-engine
-    env_file:
-      - .env
+      context:    .
+      dockerfile: packages/matcher-service/Dockerfile
+    container_name: stockx-matcher-service
+    env_file: .env
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
     networks:
-      - xchg
+      - stockx
 
-  ledger:
+  execution-service:
     build:
-      context: .
-      dockerfile: packages/db/Dockerfile
-      args:
-        DATABASE_URL: ${DATABASE_URL}
-    container_name: xchg-ledger
-    env_file:
-      - .env
+      context:    .
+      dockerfile: packages/execution-service/Dockerfile
+    container_name: stockx-execution-service
+    env_file: .env
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
     networks:
-      - xchg
+      - stockx
 
-  ws:
+  realtime-service:
     build:
-      context: .
-      dockerfile: packages/ws/Dockerfile
-    container_name: xchg-ws
-    env_file:
-      - .env
+      context:    .
+      dockerfile: packages/realtime-service/Dockerfile
+    container_name: stockx-realtime-service
+    env_file: .env
     environment:
-      PORT: 3002
+      WS_PORT: 3002
     ports:
       - "127.0.0.1:3002:3002"
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      redis: { condition: service_healthy }
     networks:
-      - xchg
+      - stockx
 
   web:
     build:
-      context: .
+      context:    .
       dockerfile: packages/web/Dockerfile
       args:
-        RESEND_API_KEY: ${RESEND_API_KEY}
-        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
-        NEXT_PUBLIC_REST_API_URL: ${NEXT_PUBLIC_REST_API_URL}
-        NEXT_PUBLIC_WS_BASE_URL: ${NEXT_PUBLIC_WS_BASE_URL}
-        NEXT_PUBLIC_BACKEND: ${NEXT_PUBLIC_BACKEND}
-
-    container_name: xchg-web
-    env_file:
-      - .env
+        NEXT_PUBLIC_BASE_URL:      ${NEXT_PUBLIC_BASE_URL}
+        NEXT_PUBLIC_REST_API_URL:  ${NEXT_PUBLIC_REST_API_URL}
+        NEXT_PUBLIC_WS_BASE_URL:   ${NEXT_PUBLIC_WS_BASE_URL}
+    container_name: stockx-web
+    env_file: .env
     environment:
       PORT: 3000
     ports:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      postgres: { condition: service_healthy }
     networks:
-      - xchg
+      - stockx
 
 networks:
-  xchg:
+  stockx:
     driver: bridge
 
 volumes:

@@ -1,4 +1,4 @@
-import { prisma } from "@exchange-lab/db";
+﻿import { prisma } from "@stockx/execution-service";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";

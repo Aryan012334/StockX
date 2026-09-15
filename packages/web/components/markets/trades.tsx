@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Trade } from "@exchange-lab/shared";
+import type { Trade } from "@stockx/shared";
 import { getTrades } from "@/lib/utils/apiClient";
 import { MarketDataManager } from "@/lib/utils/MarketDataManager";
 
@@ -35,12 +35,10 @@ export function TradesList({
 
       const trade: Trade = {
         id: payload.id,
-        market: payload.symbol,
+        symbol: payload.symbol,
         price: payload.price,
         quantity: payload.quantity,
-        quoteQuantity: (
-          Number(payload.price) * Number(payload.quantity)
-        ).toString(),
+        quoteQuantity: (Number(payload.price) * Number(payload.quantity)).toString(),
         isBuyerMaker: payload.isBuyerMaker,
         timestamp: payload.timestamp,
       };

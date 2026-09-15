@@ -1,129 +1,84 @@
-import { prisma } from "@exchange-lab/db";
-import { NextResponse, NextRequest } from "next/server";
-import bcrypt from "bcrypt";
-import { sendEmail } from "@/lib/mailer";
-import { EmailType } from "@/lib/mailer";
-import { pingApiNewUser } from "@/lib/utils/pingApiNewUser";
+// POST /api/auth/signup
+// Creates a new user with hashed password, starter wallet (₹50,000 + seed
+// stock allocation), and notifies the Matcher Service to pre-load the wallet.
+
+import { prisma }                       from "@stockx/execution-service";
+import { NextResponse, type NextRequest } from "next/server";
+import bcrypt                            from "bcrypt";
+import { pingApiNewUser }                from "@/lib/utils/pingApiNewUser";
 
 export async function POST(req: NextRequest) {
   try {
     const { name, email, password } = await req.json();
 
     if (!name || !email || !password) {
-      return NextResponse.json(
-        { msg: "All fields are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ msg: "All fields are required" }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json({ msg: "User already exists" }, { status: 409 });
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ msg: "An account with this email already exists" }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user + wallet + starter transactions in one atomic transaction
     const newUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-        },
+        data: { name, email, password: hashedPassword },
       });
 
+      // Starter wallet: ₹50,000 cash + seed stock allocation
       await tx.wallet.create({
         data: {
-          userId: user.id,
-          balance: 50000,
-          assetsHeld: {
-            TATA: 50, // Allotting 50 TATA shares
-            RIL: 50, // Allotting 50 RIL shares
-            SOL: 50, // Allotting 50 $SOL shares
+          userId:     user.id,
+          balance:    50000,
+          assetsHeld: { RIL: 50, TATA: 50, SOL: 50 },
+        },
+      });
+
+      // Audit records
+      await tx.transaction.create({
+        data: {
+          walletId:    user.id,
+          type:        "CREDIT",
+          category:    "SIGNUP_BONUS",
+          description: "Welcome bonus — ₹50,000 simulated capital",
+          amount:      50000,
+          balanceAfter: 50000,
+        },
+      });
+
+      for (const [ticker, qty] of [["RIL", 50], ["TATA", 50], ["SOL", 50]] as const) {
+        await tx.transaction.create({
+          data: {
+            walletId:    user.id,
+            type:        "CREDIT",
+            category:    "SIGNUP_BONUS",
+            description: `Seed allocation — ${qty} ${ticker} shares`,
+            amount:      0,
+            balanceAfter: 50000,
+            ticker,
+            quantity:    qty,
           },
-        },
-      });
-
-      await tx.transaction.create({
-        data: {
-          walletId: user.id,
-          type: "CREDIT",
-          category: "SIGNUP_BONUS",
-          description: "Welcome bonus",
-          amount: 50000,
-          balanceAfter: 50000,
-        },
-      });
-
-      // Ledger Receipt: SOL
-      await tx.transaction.create({
-        data: {
-          walletId: user.id,
-          type: "CREDIT",
-          category: "SIGNUP_BONUS",
-          description: "Welcome SOL coin airdrop",
-          amount: 0,
-          balanceAfter: 50000,
-          ticker: "SOL",
-          quantity: 20,
-        },
-      });
-
-      // Ledger Receipt: TATA
-      await tx.transaction.create({
-        data: {
-          walletId: user.id,
-          type: "CREDIT",
-          category: "SIGNUP_BONUS",
-          description: "Welcome TATA airdrop",
-          amount: 0,
-          balanceAfter: 50000,
-          ticker: "TATA",
-          quantity: 20,
-        },
-      });
-
-      // Ledger Receipt: RIL
-      await tx.transaction.create({
-        data: {
-          walletId: user.id,
-          type: "CREDIT",
-          category: "SIGNUP_BONUS",
-          description: "Welcome RIL airdrop",
-          amount: 0,
-          balanceAfter: 50000,
-          ticker: "RIL",
-          quantity: 20,
-        },
-      });
+        });
+      }
 
       return user;
     });
 
-    // Notify the engine for the new user
-    await pingApiNewUser(newUser.id);
-
-    //Send verification Email
-    try {
-      await sendEmail({
-        email,
-        emailType: EmailType.VERIFY,
-        userId: newUser.id,
-      });
-    } catch (error) {
-      //Continue without throwing error
-      console.log("Error sending verification mail", error);
-    }
+    // Pre-load wallet into the Matcher Service in-memory balance map
+    // (non-blocking — failure is acceptable, will load on next restart)
+    pingApiNewUser(newUser.id).catch((err) =>
+      console.error("[Signup] Failed to ping Matcher Service:", err),
+    );
 
     return NextResponse.json(
-      { msg: "User created successfully", success: true, id: newUser.id },
+      { msg: "Account created successfully", success: true, id: newUser.id },
       { status: 201 },
     );
-  } catch (error) {
-    console.error("Signup Error:", error);
+  } catch (err) {
+    console.error("[Signup] Error:", err);
     return NextResponse.json({ msg: "Internal Server Error" }, { status: 500 });
   }
 }

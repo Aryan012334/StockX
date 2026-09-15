@@ -69,13 +69,18 @@ const API_ENDPOINTS = [
   },
   {
     method: "GET",
-    path: "/api/v1/klines",
-    description: "Retrieve OHLCV candle data.",
+    path: "/api/v1/price/tickers",
+    description: "Retrieve 24-hour ticker statistics for all active symbols.",
   },
   {
     method: "GET",
-    path: "/api/v1/tickers",
-    description: "Retrieve 24-hour ticker statistics.",
+    path: "/api/v1/price/history/:symbol",
+    description: "Retrieve recent trades for sparklines and chart data.",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/stocks",
+    description: "List all tradeable stocks.",
   },
 ];
 const METHOD_STYLES: Record<string, string> = {
@@ -315,12 +320,12 @@ export default function DocsPage() {
             {
               title: "Trades",
               description:
-                "TimescaleDB hypertable containing every executed trade across all markets.",
+                "PostgreSQL table storing every executed trade. Queried directly for price history, sparklines, and ticker stats. No TimescaleDB required.",
             },
             {
-              title: "Klines",
+              title: "MatchExecution",
               description:
-                "Continuous aggregates generate 1m, 1h, 1d, and 1w OHLCV data for charting.",
+                "Idempotency table — one row per match event. The unique matchId constraint prevents duplicate settlement if an event is delivered twice.",
             },
           ].map((item) => (
             <div

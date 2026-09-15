@@ -1,10 +1,10 @@
-import { prisma } from "@exchange-lab/db";
+﻿import { prisma } from "@stockx/execution-service";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTickers } from "@/lib/utils/apiClient";
-import type { Ticker } from "@exchange-lab/shared";
+import type { Ticker } from "@stockx/shared";
 import { Briefcase, Wallet as WalletIcon } from "lucide-react";
 
 // `Wallet.assetsHeld` is a jsonb column shaped like { [ticker]: quantity }.

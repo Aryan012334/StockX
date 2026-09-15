@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, {
   useCallback,
@@ -20,8 +20,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTickers, getKlines } from "@/lib/utils/apiClient";
-import type { Ticker } from "@exchange-lab/shared";
+import { getTickers, getPriceHistory } from "@/lib/utils/apiClient";
+import type { Ticker } from "@stockx/shared";
 import { Sparkline } from "@/components/markets/Sparkline";
 
 // Static content
@@ -203,13 +203,10 @@ function MarketCard({
   useEffect(() => {
     let cancelled = false;
 
-    const endTime = Date.now();
-    const startTime = endTime - 7 * 24 * 60 * 60 * 1000;
-
-    getKlines(symbol, "1h", startTime, endTime)
-      .then((klines) => {
+    getPriceHistory(symbol, 100)
+      .then((trades) => {
         if (cancelled) return;
-        setCloses(klines.map((k) => Number(k.close)));
+        setCloses(trades.map((t) => Number(t.price)).reverse());
       })
       .catch(() => {
         if (cancelled) return;

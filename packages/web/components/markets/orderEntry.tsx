@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { isAxiosError } from "axios";
-import type { Ticker } from "@exchange-lab/shared";
+import type { Ticker } from "@stockx/shared";
 
 import { getTicker, placeOrder } from "@/lib/utils/apiClient";
 import { getWallet, type Wallet } from "@/lib/utils/getWallet";
@@ -150,11 +150,12 @@ export function OrderEntry({ market }: OrderEntryProps) {
     try {
       const result = await placeOrder({
         userId,
-        market,
+        symbol: market,
         side,
         orderType: type,
         quantity: activeQty.toString(),
         price: activePrice.toString(),
+        orderId: crypto.randomUUID(),
       });
 
       setSubmitResult({

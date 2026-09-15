@@ -1,27 +1,24 @@
 {
-  "name": "exchange-lab",
+  "name": "stockx",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
     "web",
-    "api",
-    "engine",
-    "ws",
+    "api-gateway",
+    "matcher-service",
+    "realtime-service",
     "shared",
-    "db"
+    "execution-service"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=web",
-    "dev:api": "npm run dev --workspace=api",
-    "dev:engine": "npm run dev --workspace=engine",
-    "dev:all": "npm run dev --workspaces",
     "build": "npm run build --workspaces",
-    "db:generate": "npm run db:generate --workspace=packages/db",
-    "db:push": "npm run db:push --workspace=packages/db",
-    "db:studio": "npm run db:studio --workspace=packages/db"
+    "db:generate": "npm run db:generate --workspace=execution-service",
+    "db:push": "npm run db:push --workspace=execution-service",
+    "db:migrate": "npm run db:migrate --workspace=execution-service",
+    "db:studio": "npm run db:studio --workspace=execution-service"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "vitest": "^5.0.0"
+    "typescript": "^5.3.3"
   }
 }

@@ -1,0 +1,201 @@
+// StockX — Prisma Schema
+// Plain PostgreSQL (no TimescaleDB extensions required)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// AUTH
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+
+  accounts      Account[]
+  wallet        Wallet?
+  orders        Order[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// ---------------------------------------------------------------------------
+// STOCK SERVICE — tradeable instruments
+// ---------------------------------------------------------------------------
+
+model Stock {
+  symbol      String   @id            // e.g. "RIL", "TATA", "SOL"
+  companyName String
+  status      StockStatus @default(ACTIVE)
+  baseAsset   String                  // same as symbol
+  quoteAsset  String   @default("INR")
+
+  orders      Order[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+enum StockStatus {
+  ACTIVE
+  DELISTED
+}
+
+// ---------------------------------------------------------------------------
+// WALLET — user funds and holdings
+// ---------------------------------------------------------------------------
+
+model Wallet {
+  userId       String        @id
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Decimal       @default(50000)   // quote currency (INR) balance
+  assetsHeld   Json          @default("{}")     // { "RIL": 10, "TATA": 5 }
+  transactions Transaction[]
+  updatedAt    DateTime?     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// ORDER SERVICE — durable order store
+// ---------------------------------------------------------------------------
+
+model Order {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  symbol       String
+  stock        Stock       @relation(fields: [symbol], references: [symbol])
+  side         OrderSide
+  orderType    OrderType
+  price        Decimal                          // limit price (0 for market)
+  quantity     Decimal
+  filledQty    Decimal     @default(0)
+  remainingQty Decimal
+  status       OrderStatus @default(OPEN)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([symbol, status])
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+}
+
+enum OrderStatus {
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+// ---------------------------------------------------------------------------
+// MATCH EXECUTION SERVICE — settlement records + idempotency
+// ---------------------------------------------------------------------------
+
+// One row per match event — also acts as the idempotency key.
+// A unique constraint on matchId prevents duplicate settlement.
+model MatchExecution {
+  matchId       String    @id  // tradeId from the matcher — unique per match
+  buyOrderId    String
+  sellOrderId   String
+  symbol        String
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  buyerId       String
+  sellerId      String
+  isBuyerMaker  Boolean
+
+  status        SettlementStatus @default(SETTLED)
+  settledAt     DateTime         @default(now())
+}
+
+enum SettlementStatus {
+  SETTLED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// PUBLIC TRADE FEED
+// ---------------------------------------------------------------------------
+
+model Trade {
+  id            String   @id @default(uuid())
+  symbol        String                          // e.g. "RIL_INR"
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  isBuyerMaker  Boolean
+  timestamp     DateTime @default(now())
+
+  @@index([symbol, timestamp(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// WALLET TRANSACTIONS — audit log of all financial movements
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id           String              @id @default(cuid())
+  walletId     String
+  wallet       Wallet              @relation(fields: [walletId], references: [userId], onDelete: Cascade)
+  type         TransactionType
+  category     TransactionCategory
+  description  String
+  amount       Decimal
+  balanceAfter Decimal
+  ticker       String?
+  quantity     Decimal?
+  price        Decimal?
+  createdAt    DateTime            @default(now())
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionCategory {
+  SIGNUP_BONUS
+  ORDER_BUY
+  ORDER_SELL
+}

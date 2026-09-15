@@ -21,8 +21,8 @@ export default defineConfig({
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     alias: {
-      '@exchange-lab/shared': path.resolve(__dirname, 'shared/src/index.ts'),
-      '@exchange-lab/engine': path.resolve(__dirname, 'engine/src/trade/Snowflake.ts'),
+      '@stockx/shared':            path.resolve(__dirname, 'shared/src/index.ts'),
+      '@stockx/execution-service': path.resolve(__dirname, 'execution-service/src/client.ts'),
     },
   },
 });

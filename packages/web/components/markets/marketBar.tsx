@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Ticker } from "@exchange-lab/shared";
+import type { Ticker } from "@stockx/shared";
 import { getTicker } from "@/lib/utils/apiClient";
 import { MarketDataManager } from "@/lib/utils/MarketDataManager";
 import { Separator } from "@/components/ui/separator";

@@ -1,34 +1,43 @@
-export interface KLine {
-  close: string;
-  end: string;
-  high: string;
-  low: string;
-  open: string;
-  quoteVolume: string;
-  start: string;
-  trades: string;
-  volume: string;
-}
+// Shapes consumed by the Next.js frontend
 
 export interface Trade {
-  id: number;
-  market: string;
+  id: string;
+  symbol: string;
   isBuyerMaker: boolean;
   price: string;
   quantity: string;
   quoteQuantity: string;
-  timestamp: number;
+  timestamp: number;       // epoch ms
 }
 
 export interface Ticker {
-  firstPrice: string;
-  high: string;
+  symbol: string;
   lastPrice: string;
-  low: string;
   priceChange: string;
   priceChangePercent: string;
-  quoteVolume: string;
-  symbol: string;
-  trades: string;
+  high: string;
+  low: string;
   volume: string;
+  firstPrice: string;
+}
+
+export interface Stock {
+  symbol: string;
+  companyName: string;
+  quoteAsset: string;
+  status: "ACTIVE" | "DELISTED";
+}
+
+export interface OrderRecord {
+  id: string;
+  userId: string;
+  symbol: string;
+  side: "buy" | "sell";
+  orderType: "limit" | "market";
+  price: string;
+  quantity: string;
+  filledQty: string;
+  remainingQty: string;
+  status: "OPEN" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED" | "EXPIRED";
+  createdAt: string;
 }

@@ -1,223 +1,198 @@
+"use client";
+
+// ---------------------------------------------------------------------------
+// TVChart — price chart built from the trade history endpoint.
+//
+// Instead of TimescaleDB klines views, we fetch recent trades from
+// GET /api/v1/price/history/:symbol and bucket them client-side into OHLCV
+// candles at the chosen interval.  Real-time updates arrive via WebSocket
+// trade events and are merged into the current candle bucket in-memory.
+//
+// This approach removes the TimescaleDB dependency while keeping a fully
+// functional candlestick/line chart with live streaming updates.
+// ---------------------------------------------------------------------------
+
 import { useEffect, useRef, useState } from "react";
-import { ChartManager, Candle } from "@/lib/utils/chartManager";
-import { getKlines } from "@/lib/utils/apiClient";
-import { Button } from "@/components/ui/button";
-import { MarketDataManager } from "@/lib/utils/MarketDataManager";
+import { ChartManager, type Candle } from "@/lib/utils/chartManager";
+import { getPriceHistory }            from "@/lib/utils/apiClient";
+import { MarketDataManager }           from "@/lib/utils/MarketDataManager";
+import { Button }                      from "@/components/ui/button";
 import { CandlestickChart, LineChart } from "lucide-react";
 
-const INTERVALS = ["1m", "1h", "1d", "1w"] as const;
-type Interval = (typeof INTERVALS)[number];
+type Interval = "1m" | "5m" | "1h" | "1d";
 type ChartType = "candlestick" | "line";
 
-const LOOKBACK_MS: Record<Interval, number> = {
-  "1m": 1000 * 60 * 60 * 24 * 3, // 3 days
-  "1h": 1000 * 60 * 60 * 24 * 21, // 7 days
-  "1d": 1000 * 60 * 60 * 24 * 90, // 90 days
-  "1w": 1000 * 60 * 60 * 24 * 365, // 1 year
-};
 const INTERVAL_MS: Record<Interval, number> = {
-  "1m": 60_000,
-  "1h": 3_600_000,
-  "1d": 86_400_000,
-  "1w": 604_800_000,
+  "1m":  60_000,
+  "5m":  300_000,
+  "1h":  3_600_000,
+  "1d":  86_400_000,
 };
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "wss://localhost:8080/ws";
+const INTERVALS: Interval[] = ["1m", "5m", "1h", "1d"];
 
-// Kept as a literal hex because lightweight-charts takes a plain CSS color
-// string, not a Tailwind class — it can't consume var(--muted-foreground)
-// directly. Keep this in sync with that token's actual value manually.
 const CHART_TEXT_COLOR = "#8f949e";
 
+// ---------------------------------------------------------------------------
+// Aggregate raw trades into OHLCV candle buckets
+// ---------------------------------------------------------------------------
+function buildCandles(
+  trades: { price: string; quantity: string; timestamp: number }[],
+  intervalMs: number,
+): Candle[] {
+  const bucketsMap = new Map<number, Candle>();
+
+  // trades come newest-first from the API — process oldest first
+  const sorted = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+
+  for (const t of sorted) {
+    const price = Number(t.price);
+    const qty   = Number(t.quantity);
+    const bucket = Math.floor(t.timestamp / intervalMs) * intervalMs;
+
+    const existing = bucketsMap.get(bucket);
+    if (!existing) {
+      bucketsMap.set(bucket, {
+        timestamp: bucket,
+        open:  price,
+        high:  price,
+        low:   price,
+        close: price,
+        volume: qty,
+      });
+    } else {
+      existing.high   = Math.max(existing.high, price);
+      existing.low    = Math.min(existing.low,  price);
+      existing.close  = price;
+      existing.volume += qty;
+    }
+  }
+
+  return Array.from(bucketsMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 export function TVChart({ market }: { market: string }) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartManagerRef = useRef<ChartManager | null>(null);
-  const lastCandleRef = useRef<Candle | null>(null);
-  const dataRef = useRef<Candle[]>([]); // cached formatted candles for the current market/interval
+  const chartRef       = useRef<HTMLDivElement>(null);
+  const chartMgrRef    = useRef<ChartManager | null>(null);
+  const lastCandleRef  = useRef<Candle | null>(null);
+  const dataRef        = useRef<Candle[]>([]);
 
-  const [interval, setInterval] = useState<Interval>("1m");
-  const [chartType, setChartType] = useState<ChartType>("candlestick");
-  const [loading, setLoading] = useState(false);
+  const [interval,  setIntervalState] = useState<Interval>("1m");
+  const [chartType, setChartType]     = useState<ChartType>("candlestick");
+  const [loading,   setLoading]       = useState(false);
+
+  // Load historical trades → build candles → render chart
   useEffect(() => {
-    let ignore = false;
+    let cancelled = false;
+    setLoading(true);
+    lastCandleRef.current = null;
 
-    const initChart = async () => {
-      if (!chartRef.current) return;
-      setLoading(true);
+    getPriceHistory(market, 500)
+      .then((trades) => {
+        if (cancelled || !chartRef.current) return;
 
-      try {
-        const now = Date.now();
-        const rawData = await getKlines(
-          market,
-          interval,
-          now - LOOKBACK_MS[interval],
-          now,
-        );
-        if (ignore) return;
+        const candles = buildCandles(trades, INTERVAL_MS[interval]);
+        dataRef.current = candles;
 
-        // API returns `time` as unix seconds. Dedupe + sort defensively;
-        // lightweight-charts requires strictly ascending, unique
-        // timestamps or it silently refuses to render.
-        const seen = new Set<number>();
-        const formattedData: Candle[] = rawData
-          .map((x: any) => ({
-            timestamp: Number(x.time) * 1000,
-            open: parseFloat(x.open),
-            high: parseFloat(x.high),
-            low: parseFloat(x.low),
-            close: parseFloat(x.close),
-            volume: parseFloat(x.volume ?? "0"),
-          }))
-          .filter((x) => {
-            if (isNaN(x.timestamp) || seen.has(x.timestamp)) return false;
-            seen.add(x.timestamp);
-            return true;
-          })
-          .sort((a, b) => a.timestamp - b.timestamp);
+        chartMgrRef.current?.destroy();
+        chartMgrRef.current = new ChartManager(chartRef.current, candles, {
+          background:  "transparent",
+          textColor:   CHART_TEXT_COLOR,
+          seriesType:  chartType,
+        });
 
-        if (ignore) return;
-
-        dataRef.current = formattedData;
-
-        chartManagerRef.current?.destroy();
-        chartManagerRef.current = new ChartManager(
-          chartRef.current,
-          formattedData,
-          {
-            background: "transparent",
-            textColor: CHART_TEXT_COLOR,
-            seriesType: chartType,
-          },
-        );
-
-        lastCandleRef.current =
-          formattedData.length > 0
-            ? formattedData[formattedData.length - 1]
-            : null;
-      } catch (e) {
-        if (!ignore) console.error("Failed to load historical klines", e);
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    };
-
-    initChart();
+        lastCandleRef.current = candles.length > 0
+          ? candles[candles.length - 1]!
+          : null;
+      })
+      .catch((err) => {
+        if (!cancelled) console.error("[TVChart] Failed to load price history:", err);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => {
-      ignore = true;
-      chartManagerRef.current?.destroy();
-      chartManagerRef.current = null;
+      cancelled = true;
+      chartMgrRef.current?.destroy();
+      chartMgrRef.current = null;
     };
-  }, [market, interval]);
+  }, [market, interval]); // chartType intentionally excluded — handled below
 
+  // Re-render with same data when chartType changes (no new fetch)
   useEffect(() => {
     if (!chartRef.current || dataRef.current.length === 0) return;
-
-    chartManagerRef.current?.destroy();
-    chartManagerRef.current = new ChartManager(
-      chartRef.current,
-      dataRef.current,
-      {
-        background: "transparent",
-        textColor: CHART_TEXT_COLOR,
-        seriesType: chartType,
-      },
-    );
+    chartMgrRef.current?.destroy();
+    chartMgrRef.current = new ChartManager(chartRef.current, dataRef.current, {
+      background: "transparent",
+      textColor:  CHART_TEXT_COLOR,
+      seriesType: chartType,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartType]);
 
-  // STEP 2: STREAM REAL-TIME DATA (WEBSOCKET)
-
+  // Stream real-time trade events and merge into current candle bucket
   useEffect(() => {
-    const manager = MarketDataManager.getInstance();
+    const manager    = MarketDataManager.getInstance();
     const callbackId = `CHART-${market}-${interval}`;
+    const ms         = INTERVAL_MS[interval];
 
-    manager.registerCallback("trade", callbackId, (message: any) => {
-      // Check if the chart is ready INSIDE the callback
-      if (!chartManagerRef.current) {
-        console.log("WS message received, but chart not ready yet.");
-        return;
-      }
+    manager.registerCallback("trade", callbackId, (payload: any) => {
+      if (!chartMgrRef.current) return;
 
-      // 1. Extract the inner payload if it's wrapped
-      const payload = message.data ? message.data : message;
+      const price  = Number(payload.price ?? payload.p ?? payload.lastPrice);
+      const volume = Number(payload.quantity ?? payload.q ?? 0);
+      const time   = Number(payload.timestamp ?? payload.T ?? Date.now());
 
-      // 2. Access properties from the unwrapped payload
-      const tradePrice = Number(payload.p ?? payload.lastPrice);
-      const tradeVolume = Number(payload.q ?? 0);
-      const tradeTime = Number(payload.T ?? Date.now());
+      if (!Number.isFinite(price) || price <= 0) return;
 
-      if (Number.isNaN(tradePrice)) {
-        console.warn("Invalid trade price received:", payload);
-        return;
-      }
-
-      const intervalMs = INTERVAL_MS[interval];
+      const bucket = Math.floor(time / ms) * ms;
 
       if (!lastCandleRef.current) {
-        const bucketStart = Math.floor(tradeTime / intervalMs) * intervalMs;
-
-        const seeded: Candle = {
-          timestamp: bucketStart,
-          open: tradePrice,
-          high: tradePrice,
-          low: tradePrice,
-          close: tradePrice,
-          volume: tradeVolume,
+        const candle: Candle = {
+          timestamp: bucket, open: price, high: price, low: price, close: price, volume,
         };
-
-        lastCandleRef.current = seeded;
-        dataRef.current = [...dataRef.current, seeded];
-        chartManagerRef.current.update(seeded);
+        lastCandleRef.current = candle;
+        dataRef.current = [...dataRef.current, candle];
+        chartMgrRef.current.update(candle);
         return;
       }
 
-      const current = lastCandleRef.current;
+      const cur = lastCandleRef.current;
       let candle: Candle;
 
-      if (tradeTime < current.timestamp + intervalMs) {
+      if (time < cur.timestamp + ms) {
+        // Same candle bucket — update OHLCV
         candle = {
-          ...current,
-          close: tradePrice,
-          high: Math.max(current.high, tradePrice),
-          low: Math.min(current.low, tradePrice),
-          volume: current.volume + tradeVolume,
+          ...cur,
+          close:  price,
+          high:   Math.max(cur.high, price),
+          low:    Math.min(cur.low,  price),
+          volume: cur.volume + volume,
         };
         dataRef.current = [...dataRef.current.slice(0, -1), candle];
       } else {
-        const bucketStart = Math.floor(tradeTime / intervalMs) * intervalMs;
-
-        candle = {
-          timestamp: bucketStart,
-          open: tradePrice,
-          high: tradePrice,
-          low: tradePrice,
-          close: tradePrice,
-          volume: tradeVolume,
-        };
+        // New candle bucket
+        candle = { timestamp: bucket, open: price, high: price, low: price, close: price, volume };
         dataRef.current = [...dataRef.current, candle];
       }
 
       lastCandleRef.current = candle;
-      chartManagerRef.current.update(candle);
+      chartMgrRef.current.update(candle);
     });
 
-    manager.sendMessage({
-      method: "SUBSCRIBE",
-      params: [`trade@${market}`],
-    });
+    manager.sendMessage({ method: "SUBSCRIBE", params: [`trade@${market}`] });
 
     return () => {
       manager.deRegisterCallback("trade", callbackId);
-      manager.sendMessage({
-        method: "UNSUBSCRIBE",
-        params: [`trade@${market}`],
-      });
+      manager.sendMessage({ method: "UNSUBSCRIBE", params: [`trade@${market}`] });
     };
   }, [market, interval]);
 
   return (
     <div className="flex h-full w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg bg-card">
+      {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex gap-1">
           {INTERVALS.map((iv) => (
@@ -225,7 +200,7 @@ export function TVChart({ market }: { market: string }) {
               key={iv}
               variant="ghost"
               size="sm"
-              onClick={() => setInterval(iv)}
+              onClick={() => setIntervalState(iv)}
               className={`h-7 px-2 text-xs ${
                 iv === interval
                   ? "bg-[var(--brand-cyan)]/10 text-[var(--brand-cyan)]"
@@ -235,7 +210,6 @@ export function TVChart({ market }: { market: string }) {
             </Button>
           ))}
         </div>
-
         <div className="flex gap-1">
           <Button
             variant="ghost"
@@ -264,12 +238,18 @@ export function TVChart({ market }: { market: string }) {
         </div>
       </div>
 
+      {/* Chart container */}
       <div className="relative w-full flex-1">
         <div
           ref={chartRef}
           className="absolute inset-0"
           style={{ opacity: loading ? 0.4 : 1, transition: "opacity 0.2s" }}
         />
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">Loading chart...</span>
+          </div>
+        )}
       </div>
     </div>
   );

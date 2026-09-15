@@ -1,22 +1,16 @@
 import axios from "axios";
 import type {
   DepthUpdateMessage,
-  KLine,
-  Ticker,
   Trade,
+  Ticker,
+  Stock,
+  OrderRecord,
   EngineRequest,
   EngineResponse,
-} from "@exchange-lab/shared";
+} from "@stockx/shared";
 
-// Extract the exact types from your Engine definitions
-export type CreateOrderPayload = Extract<
-  EngineRequest,
-  { type: "CREATE_ORDER" }
->["data"];
-export type OrderPlacedResponse = Extract<
-  EngineResponse,
-  { type: "ORDER_PLACED" }
->["payload"];
+export type CreateOrderPayload = Extract<EngineRequest, { type: "CREATE_ORDER" }>["data"];
+export type OrderPlacedResponse = Extract<EngineResponse, { type: "ORDER_PLACED" }>["payload"];
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_REST_API_URL ?? "http://localhost:3001/api/v1";
@@ -24,114 +18,97 @@ const BASE_URL =
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10_000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
+
+// ---------------------------------------------------------------------------
+// Stock Service
+// ---------------------------------------------------------------------------
+
+export async function getStocks(): Promise<Stock[]> {
+  const { data } = await api.get<Stock[]>("/stocks");
+  return data;
+}
+
+export async function getStock(symbol: string): Promise<Stock> {
+  const { data } = await api.get<Stock>(`/stocks/${symbol}`);
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Price Service
+// ---------------------------------------------------------------------------
 
 export async function getTickers(): Promise<Ticker[]> {
   try {
-    const { data } = await api.get<Ticker[]>("/tickers");
+    const { data } = await api.get<Ticker[]>("/price/tickers");
     return data;
-  } catch (error) {
-    console.error("Failed to fetch tickers:", error);
+  } catch {
     return [];
   }
 }
 
-export async function getTicker(market: string): Promise<Ticker> {
-  try {
-    const { data } = await api.get<Ticker[]>("/tickers", {
-      params: { market },
-    });
-
-    if (!data.length) {
-      throw new Error(`Ticker not found for market: ${market}`);
-    }
-
-    return data[0];
-  } catch (error) {
-    console.error(`Failed to fetch ticker for ${market}:`, error);
-    throw error;
-  }
+export async function getTicker(symbol: string): Promise<Ticker> {
+  const { data } = await api.get<Ticker[]>("/price/tickers", { params: { symbol } });
+  if (!data.length) throw new Error(`No ticker data for ${symbol}`);
+  return data[0]!;
 }
 
-export async function getDepth(market: string): Promise<DepthUpdateMessage> {
-  const { data } = await api.get<DepthUpdateMessage>("/depth", {
-    params: {
-      market,
-    },
-  });
-
+/**
+ * Returns recent trades for a symbol — used by the chart to build candles
+ * and by the sparkline on the markets page.
+ */
+export async function getPriceHistory(symbol: string, limit = 500): Promise<Trade[]> {
+  const { data } = await api.get<Trade[]>(`/price/history/${symbol}`, { params: { limit } });
   return data;
 }
 
-export async function getTrades(market: string, limit?: number): Promise<Trade[]> {
-  const { data } = await api.get<Trade[]>("/trades", {
-    params: {
-      market,
-      limit,
-    },
-  });
+// ---------------------------------------------------------------------------
+// Order book depth (live, from Matcher Service)
+// ---------------------------------------------------------------------------
 
+export async function getDepth(symbol: string): Promise<DepthUpdateMessage["data"] & { symbol: string }> {
+  const { data } = await api.get(`/depth`, { params: { symbol } });
   return data;
 }
 
-export async function getKlines(
-  market: string,
-  interval: string,
-  startTime: number,
-  endTime: number,
-): Promise<KLine[]> {
-  const { data } = await api.get<KLine[]>("/klines", {
-    params: {
-      symbol: market,
-      interval,
-      startTime,
-      endTime,
-    },
-  });
+// ---------------------------------------------------------------------------
+// Trade feed (settled trades from Execution Service DB)
+// ---------------------------------------------------------------------------
 
-  return data.sort((a, b) => Number(a.end) - Number(b.end));
+export async function getTrades(symbol: string, limit = 50): Promise<Trade[]> {
+  const { data } = await api.get<Trade[]>("/trades", { params: { symbol, limit } });
+  return data;
 }
 
-// Added placeOrder without touching the original Axios config
-export async function placeOrder(
-  payload: CreateOrderPayload,
-): Promise<OrderPlacedResponse> {
-  const { data } = await api.post<OrderPlacedResponse>("/order", payload, {
-    timeout: 20_000,
-  });
+// ---------------------------------------------------------------------------
+// Order Service
+// ---------------------------------------------------------------------------
+
+export async function placeOrder(payload: CreateOrderPayload): Promise<OrderPlacedResponse> {
+  const { data } = await api.post<OrderPlacedResponse>("/order", payload, { timeout: 20_000 });
   return data;
+}
+
+export async function cancelOrder(orderId: string, symbol: string): Promise<void> {
+  await api.delete("/order", { data: { orderId, symbol } });
 }
 
 export async function getOpenOrders(
   userId: string,
-  market: string,
+  symbol: string,
 ): Promise<Extract<EngineResponse, { type: "OPEN_ORDERS" }>["payload"]> {
-  const { data } = await api.get<
-    Extract<EngineResponse, { type: "OPEN_ORDERS" }>["payload"]
-  >("/order/open", {
-    params: {
-      userId,
-      market,
-    },
-  });
+  const { data } = await api.get("/order/open", { params: { userId, symbol } });
   return data;
 }
 
-export async function cancelOrder(
-  orderId: string,
-  market: string,
-): Promise<Extract<EngineResponse, { type: "ORDER_CANCELLED" }>["payload"]> {
-  const { data } = await api.delete<
-    Extract<EngineResponse, { type: "ORDER_CANCELLED" }>["payload"]
-  >("/order", {
-    // Axios requires body payloads for DELETE requests to be nested inside the `data` config property
-    data: {
-      orderId,
-      market,
-    },
+export async function getOrderHistory(
+  userId: string,
+  symbol?: string,
+  limit = 50,
+): Promise<OrderRecord[]> {
+  const { data } = await api.get<OrderRecord[]>("/order/history", {
+    params: { userId, ...(symbol ? { symbol } : {}), limit },
   });
   return data;
 }
