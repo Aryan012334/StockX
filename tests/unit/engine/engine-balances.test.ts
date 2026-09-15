@@ -319,13 +319,13 @@ describe("TestEngine — Order Cancellation with Balances", () => {
   });
 
   it("should return error for non-existent order cancellation", () => {
-    const cancel = engine.cancelOrder("RIL_INR", 9999999n);
+    const cancel = engine.cancelOrder("RIL_INR", "nonexistent-order-id-00000000");
     expect(cancel.success).toBe(false);
     expect(cancel.error).toBe("No order found");
   });
 
   it("should return error for cancellation on non-existent market", () => {
-    const cancel = engine.cancelOrder("FAKE_INR", 1n);
+    const cancel = engine.cancelOrder("FAKE_INR", "any-id");
     expect(cancel.success).toBe(false);
     expect(cancel.error).toBe("No orderbook found");
   });

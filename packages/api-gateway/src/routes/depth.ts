@@ -1,9 +1,6 @@
-// GET /api/v1/depth?symbol=RIL_INR
-// Returns the live order book depth snapshot from the Matcher Service.
-
-import { Router }       from "express";
-import { EngineClient } from "../redisClient.js";
-import { GET_DEPTH }    from "@stockx/shared";
+import { Router }           from "express";
+import { ExchangeGateway }  from "../exchangeGateway.js";
+import { GET_DEPTH }        from "@stockx/shared";
 
 export const depthRouter = Router();
 
@@ -14,7 +11,7 @@ depthRouter.get("/", async (req, res) => {
   }
 
   try {
-    const response = await EngineClient.getInstance().sendRequest({
+    const response = await ExchangeGateway.getInstance().send({
       type: GET_DEPTH,
       data: { symbol },
     });

@@ -1,202 +1,146 @@
 /**
  * Engine Test Factory
  *
- * Creates isolated Orderbook instances for unit testing without any
+ * Creates isolated Orderbook / Engine instances for unit testing without any
  * Redis, database, or filesystem dependencies.
  *
- * The Engine class has hard dependencies on RedisManager and Prisma,
- * so we test the Orderbook directly (which is the actual matching engine)
- * and create lightweight wrappers that replicate Engine's balance logic
- * without requiring infrastructure.
+ * Updated to use the new matcher-service paths and string UUID order IDs
+ * (Snowflake IDs were removed in the CortexCookie refactor).
  */
 
-import { Orderbook } from "../../packages/engine/src/trade/Orderbook.js";
+import { randomUUID } from "crypto";
+import { Orderbook }  from "../../packages/matcher-service/src/trade/Orderbook.js";
 import type {
   Order,
   Fill,
-} from "../../packages/engine/src/trade/Orderbook.js";
-import { Snowflake } from "../../packages/engine/src/trade/Snowflake.js";
+} from "../../packages/matcher-service/src/trade/Orderbook.js";
 
 export type { Order, Fill };
-
-// Re-export for convenience
 export { Orderbook };
 
-const snowflake = new Snowflake(42); // deterministic worker ID for tests
-
 /**
- * Generates a unique Snowflake ID for test orders.
+ * Generates a unique string UUID for test orders.
+ * Replaces the old Snowflake bigint generator — order IDs are now UUID strings.
  */
-export function generateOrderId(): bigint {
-  return snowflake.generate();
+export function generateOrderId(): string {
+  return randomUUID();
 }
 
-/**
- * User balance tracking for test scenarios.
- * Replicates the Engine's balance management without Redis/DB dependencies.
- */
+// ---------------------------------------------------------------------------
+// Balance types (mirrors Engine internals)
+// ---------------------------------------------------------------------------
+
 export interface AssetBalance {
   available: number;
-  locked: number;
+  locked:    number;
 }
 
 export interface UserBalances {
   [asset: string]: AssetBalance;
 }
 
-/**
- * Lightweight in-memory trading engine for testing.
- * Replicates the core logic of Engine.ts without Redis/DB/FS dependencies.
- */
+// ---------------------------------------------------------------------------
+// TestEngine
+// Isolated replica of the Engine class for unit tests.
+// No Redis, no Prisma, no filesystem — pure in-memory.
+// ---------------------------------------------------------------------------
+
 export class TestEngine {
   private orderbooks: Map<string, Orderbook> = new Map();
-  private balances: Map<string, UserBalances> = new Map();
+  private balances:   Map<string, UserBalances> = new Map();
 
   constructor(markets: string[] = ["RIL_INR", "TATA_INR", "SOL_INR"]) {
     for (const market of markets) {
-      const [baseAsset] = market.split("_");
-      if (baseAsset) {
-        this.orderbooks.set(market, new Orderbook(baseAsset, [], [], 0));
-      }
+      this.orderbooks.set(market, new Orderbook(market));
     }
   }
 
-  /**
-   * Initialize a user with starting balances.
-   */
-  addUser(
-    userId: string,
-    balances: Record<string, number> = { INR: 100000 }
-  ): void {
-    const userBalance: UserBalances = {};
+  addUser(userId: string, balances: Record<string, number> = { INR: 100000 }): void {
+    const ub: UserBalances = {};
     for (const [asset, amount] of Object.entries(balances)) {
-      userBalance[asset] = { available: amount, locked: 0 };
+      ub[asset] = { available: amount, locked: 0 };
     }
-    this.balances.set(userId, userBalance);
+    this.balances.set(userId, ub);
   }
 
-  /**
-   * Get a user's balances.
-   */
   getUserBalance(userId: string): UserBalances | undefined {
     return this.balances.get(userId);
   }
 
-  /**
-   * Get the orderbook for a market.
-   */
   getOrderbook(market: string): Orderbook | undefined {
     return this.orderbooks.get(market);
   }
 
-  /**
-   * Parse market string into base and quote assets.
-   */
-  private parseMarket(market: string): {
-    baseAsset: string;
-    quoteAsset: string;
-  } {
-    const [baseAsset, quoteAsset] = market.split("_");
-    if (!baseAsset || !quoteAsset) {
-      throw new Error(
-        `Invalid market format: ${market}. Expected BASE_QUOTE`
-      );
-    }
-    return { baseAsset, quoteAsset };
+  private parseMarket(market: string): { baseAsset: string; quoteAsset: string } {
+    const [base, quote] = market.split("_");
+    if (!base || !quote) throw new Error(`Invalid market: ${market}`);
+    return { baseAsset: base, quoteAsset: quote };
   }
 
-  /**
-   * Lock funds before order placement. Mirrors Engine.checkAndLockFunds.
-   */
-  private checkAndLockFunds(
+  private lockFunds(
     baseAsset: string,
     quoteAsset: string,
     side: "buy" | "sell",
     userId: string,
     price: number,
-    quantity: number
+    quantity: number,
   ): void {
-    const userWallet = this.balances.get(userId);
-    if (!userWallet) {
-      throw new Error("User wallet not initialized");
-    }
+    const wallet = this.balances.get(userId);
+    if (!wallet) throw new Error("User wallet not initialized");
 
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      throw new Error(`Invalid quantity: ${quantity}`);
-    }
-    if (!Number.isFinite(price) || price <= 0) {
-      throw new Error(`Invalid price: ${price}`);
-    }
+    if (!Number.isFinite(quantity) || quantity <= 0) throw new Error(`Invalid quantity: ${quantity}`);
+    if (!Number.isFinite(price)    || price    <= 0) throw new Error(`Invalid price: ${price}`);
 
     if (side === "buy") {
-      const totalCost = quantity * price;
-      const asset = userWallet[quoteAsset];
-      if (!asset) throw new Error(`User does not hold: ${quoteAsset}`);
-      if (asset.available < totalCost) throw new Error("Insufficient Funds");
-      asset.available -= totalCost;
-      asset.locked += totalCost;
+      const cost  = quantity * price;
+      const asset = wallet[quoteAsset];
+      if (!asset)              throw new Error(`User does not hold: ${quoteAsset}`);
+      if (asset.available < cost) throw new Error("Insufficient Funds");
+      asset.available -= cost;
+      asset.locked    += cost;
     } else {
-      const asset = userWallet[baseAsset];
-      if (!asset) throw new Error(`User does not hold: ${baseAsset}`);
-      if (asset.available < quantity)
-        throw new Error(
-          `Insufficient ${baseAsset} qty for this sell order`
-        );
+      const asset = wallet[baseAsset];
+      if (!asset)                   throw new Error(`User does not hold: ${baseAsset}`);
+      if (asset.available < quantity) throw new Error(`Insufficient ${baseAsset} qty for this sell order`);
       asset.available -= quantity;
-      asset.locked += quantity;
+      asset.locked    += quantity;
     }
   }
 
-  /**
-   * Update balances after fills. Mirrors Engine.updateBalance.
-   */
   private updateBalance(
     userId: string,
     baseAsset: string,
     quoteAsset: string,
     side: "buy" | "sell",
-    fills: Fill[]
+    fills: Fill[],
   ): void {
-    const userWallet = this.balances.get(userId);
-    if (!userWallet) throw new Error(`User wallet ${userId} not initialized`);
-
-    if (!userWallet[baseAsset])
-      userWallet[baseAsset] = { available: 0, locked: 0 };
-    if (!userWallet[quoteAsset])
-      userWallet[quoteAsset] = { available: 0, locked: 0 };
+    const uw = this.balances.get(userId);
+    if (!uw) throw new Error(`User wallet ${userId} not initialized`);
+    if (!uw[baseAsset])  uw[baseAsset]  = { available: 0, locked: 0 };
+    if (!uw[quoteAsset]) uw[quoteAsset] = { available: 0, locked: 0 };
 
     for (const fill of fills) {
-      const otherWallet = this.balances.get(fill.otherUserId);
-      if (!otherWallet)
-        throw new Error(
-          `Counter-party wallet ${fill.otherUserId} not found`
-        );
+      const mw = this.balances.get(fill.otherUserId);
+      if (!mw) throw new Error(`Counter-party wallet ${fill.otherUserId} not found`);
+      if (!mw[baseAsset])  mw[baseAsset]  = { available: 0, locked: 0 };
+      if (!mw[quoteAsset]) mw[quoteAsset] = { available: 0, locked: 0 };
 
-      if (!otherWallet[baseAsset])
-        otherWallet[baseAsset] = { available: 0, locked: 0 };
-      if (!otherWallet[quoteAsset])
-        otherWallet[quoteAsset] = { available: 0, locked: 0 };
-
-      const fillCost = fill.qty * fill.price;
-
+      const cost = fill.qty * fill.price;
       if (side === "buy") {
-        userWallet[quoteAsset]!.locked -= fillCost;
-        userWallet[baseAsset]!.available += fill.qty;
-        otherWallet[baseAsset]!.locked -= fill.qty;
-        otherWallet[quoteAsset]!.available += fillCost;
+        uw[quoteAsset]!.locked    -= cost;
+        uw[baseAsset]!.available  += fill.qty;
+        mw[baseAsset]!.locked     -= fill.qty;
+        mw[quoteAsset]!.available += cost;
       } else {
-        userWallet[baseAsset]!.locked -= fill.qty;
-        userWallet[quoteAsset]!.available += fillCost;
-        otherWallet[quoteAsset]!.locked -= fillCost;
-        otherWallet[baseAsset]!.available += fill.qty;
+        uw[baseAsset]!.locked     -= fill.qty;
+        uw[quoteAsset]!.available += cost;
+        mw[quoteAsset]!.locked    -= cost;
+        mw[baseAsset]!.available  += fill.qty;
       }
     }
   }
 
-  /**
-   * Reconcile locked funds after matching. Mirrors Engine.reconcileLockedFunds.
-   */
-  private reconcileLockedFunds(
+  private reconcile(
     userId: string,
     baseAsset: string,
     quoteAsset: string,
@@ -205,193 +149,133 @@ export class TestEngine {
     executedQty: number,
     remainingQty: number,
     restingOnBook: boolean,
-    fills: Fill[]
+    fills: Fill[],
   ): void {
-    const userWallet = this.balances.get(userId);
-    if (!userWallet) return;
+    const w = this.balances.get(userId);
+    if (!w) return;
 
     if (side === "buy") {
-      const reservedForFilled = executedQty * price;
-      const actuallySpent = fills.reduce(
-        (sum, f) => sum + f.qty * f.price,
-        0
-      );
-      const favorableSurplus = reservedForFilled - actuallySpent;
-      const remainderReserve = restingOnBook ? 0 : remainingQty * price;
-      const toRelease = favorableSurplus + remainderReserve;
-
-      if (toRelease > 0) {
-        const asset = userWallet[quoteAsset];
-        if (asset) {
-          asset.locked -= toRelease;
-          asset.available += toRelease;
-        }
+      const surplus    = executedQty * price - fills.reduce((s, f) => s + f.qty * f.price, 0);
+      const unrestored = restingOnBook ? 0 : remainingQty * price;
+      const release    = surplus + unrestored;
+      if (release > 0 && w[quoteAsset]) {
+        w[quoteAsset]!.locked    -= release;
+        w[quoteAsset]!.available += release;
       }
     } else {
-      if (!restingOnBook && remainingQty > 0) {
-        const asset = userWallet[baseAsset];
-        if (asset) {
-          asset.locked -= remainingQty;
-          asset.available += remainingQty;
-        }
+      if (!restingOnBook && remainingQty > 0 && w[baseAsset]) {
+        w[baseAsset]!.locked    -= remainingQty;
+        w[baseAsset]!.available += remainingQty;
       }
     }
   }
 
-  /**
-   * Submit an order. Full flow matching Engine.createOrder.
-   */
   createOrder(params: {
-    market: string;
-    price: number;
-    quantity: number;
-    side: "buy" | "sell";
-    userId: string;
-    orderId?: bigint;
-    orderType?: "limit" | "market";
+    market:        string;
+    price:         number;
+    quantity:      number;
+    side:          "buy" | "sell";
+    userId:        string;
+    orderId?:      string;
+    orderType?:    "limit" | "market";
     executionType?: "ioc";
   }): {
-    executedQty: number;
-    fills: Fill[];
-    orderId: bigint;
-    remainingQty: number;
+    executedQty:   number;
+    fills:         Fill[];
+    orderId:       string;
+    remainingQty:  number;
     restingOnBook: boolean;
   } {
     const {
-      market,
-      price,
-      quantity,
-      side,
-      userId,
+      market, price, quantity, side, userId,
       orderId = generateOrderId(),
       orderType = "limit",
       executionType,
     } = params;
 
     const { baseAsset, quoteAsset } = this.parseMarket(market);
-    const orderbook = this.orderbooks.get(market);
-    if (!orderbook) throw new Error("No orderbook found");
+    const ob = this.orderbooks.get(market);
+    if (!ob) throw new Error("No orderbook found");
 
-    this.checkAndLockFunds(
-      baseAsset,
-      quoteAsset,
-      side,
-      userId,
-      price,
-      quantity
-    );
+    this.lockFunds(baseAsset, quoteAsset, side, userId, price, quantity);
 
-    const order: Order = {
-      price,
-      quantity,
-      orderId,
-      filled: 0,
-      side,
-      userId,
-    };
-
+    const order: Omit<Order, "seq"> = { price, quantity, orderId, filled: 0, side, userId };
     const shouldRest = orderType === "limit" && executionType !== "ioc";
-    const { fills, executedQty } = orderbook.addOrder(order, {
-      rest: shouldRest,
-    });
+    const { fills, executedQty } = ob.addOrder(order, { rest: shouldRest });
+
     this.updateBalance(userId, baseAsset, quoteAsset, side, fills);
 
-    const remainingQty = quantity - executedQty;
+    const remainingQty  = quantity - executedQty;
     const restingOnBook = shouldRest && remainingQty > 0;
 
-    this.reconcileLockedFunds(
-      userId,
-      baseAsset,
-      quoteAsset,
-      side,
-      price,
-      executedQty,
-      remainingQty,
-      restingOnBook,
-      fills
-    );
+    this.reconcile(userId, baseAsset, quoteAsset, side, price, executedQty, remainingQty, restingOnBook, fills);
 
     return { executedQty, fills, orderId, remainingQty, restingOnBook };
   }
 
-  /**
-   * Cancel an order. Mirrors Engine.process CANCEL_ORDER.
-   */
-  cancelOrder(
-    market: string,
-    orderId: bigint
-  ): { success: boolean; error?: string } {
+  cancelOrder(market: string, orderId: string): { success: boolean; error?: string } {
     const { baseAsset, quoteAsset } = this.parseMarket(market);
-    const orderbook = this.orderbooks.get(market);
-    if (!orderbook) return { success: false, error: "No orderbook found" };
+    const ob = this.orderbooks.get(market);
+    if (!ob) return { success: false, error: "No orderbook found" };
 
     const order =
-      orderbook.asks.find((o) => o.orderId === orderId) ||
-      orderbook.bids.find((o) => o.orderId === orderId);
+      ob.asks.find((o) => o.orderId === orderId) ??
+      ob.bids.find((o) => o.orderId === orderId);
+
     if (!order) return { success: false, error: "No order found" };
 
-    const userWallet = this.balances.get(order.userId);
-    if (!userWallet)
-      return { success: false, error: "User wallet not found" };
+    const w = this.balances.get(order.userId);
+    if (!w)   return { success: false, error: "User wallet not found" };
 
     if (order.side === "buy") {
-      orderbook.cancelBid(order);
-      const remainingQty = order.quantity - order.filled;
-      const lockedValue = remainingQty * order.price;
-      if (userWallet[quoteAsset]) {
-        userWallet[quoteAsset]!.available += lockedValue;
-        userWallet[quoteAsset]!.locked -= lockedValue;
+      ob.cancelBid(orderId);
+      const rem = order.quantity - order.filled;
+      if (w[quoteAsset]) {
+        w[quoteAsset]!.available += rem * order.price;
+        w[quoteAsset]!.locked    -= rem * order.price;
       }
     } else {
-      orderbook.cancelAsk(order);
-      const remainingQty = order.quantity - order.filled;
-      if (userWallet[baseAsset]) {
-        userWallet[baseAsset]!.available += remainingQty;
-        userWallet[baseAsset]!.locked -= remainingQty;
+      ob.cancelAsk(orderId);
+      const rem = order.quantity - order.filled;
+      if (w[baseAsset]) {
+        w[baseAsset]!.available += rem;
+        w[baseAsset]!.locked    -= rem;
       }
     }
-
     return { success: true };
   }
 
-  /**
-   * Get depth for a market.
-   */
-  getDepth(market: string): { bids: [string, string][]; asks: [string, string][] } | undefined {
-    const orderbook = this.orderbooks.get(market);
-    if (!orderbook) return undefined;
-    return orderbook.getDepth();
+  getDepth(market: string) {
+    return this.orderbooks.get(market)?.getDepth();
   }
 
-  /**
-   * Calculate total system balances across all users for conservation checks.
-   */
   getTotalSystemBalances(): Record<string, { available: number; locked: number; total: number }> {
     const totals: Record<string, { available: number; locked: number; total: number }> = {};
-    for (const [, userBalance] of this.balances) {
-      for (const [asset, balance] of Object.entries(userBalance)) {
+    for (const ub of this.balances.values()) {
+      for (const [asset, ab] of Object.entries(ub)) {
         if (!totals[asset]) totals[asset] = { available: 0, locked: 0, total: 0 };
-        totals[asset]!.available += balance.available;
-        totals[asset]!.locked += balance.locked;
-        totals[asset]!.total += balance.available + balance.locked;
+        totals[asset]!.available += ab.available;
+        totals[asset]!.locked    += ab.locked;
+        totals[asset]!.total     += ab.available + ab.locked;
       }
     }
     return totals;
   }
 }
 
-/**
- * Helper to create a simple order object for Orderbook-only tests.
- */
+// ---------------------------------------------------------------------------
+// createTestOrder — helper for Orderbook-only tests
+// ---------------------------------------------------------------------------
+
 export function createTestOrder(
-  overrides: Partial<Order> & { side: "buy" | "sell" }
-): Order {
+  overrides: Partial<Omit<Order, "seq">> & { side: "buy" | "sell" },
+): Omit<Order, "seq"> {
   return {
-    price: 100,
+    price:    100,
     quantity: 10,
-    orderId: generateOrderId(),
-    filled: 0,
-    userId: "test-user",
+    orderId:  generateOrderId(),
+    filled:   0,
+    userId:   "test-user",
     ...overrides,
   };
 }

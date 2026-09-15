@@ -3,20 +3,27 @@ import type { RedisClientType } from "redis";
 import type { EngineResponse } from "@stockx/shared";
 import type { WsMessage } from "@stockx/shared";
 import type { DbMessage } from "@stockx/shared";
+import { MATCHES_QUEUE, ORDER_UPDATES_QUEUE } from "@stockx/shared";
 import { config } from "dotenv";
 
 config({ quiet: true });
 
 // ---------------------------------------------------------------------------
-// RedisManager
-// Singleton that owns the matcher-service's Redis connection.
+// RedisManager  (Matcher Service)
 //
-// Channels / queues used:
-//   "messages"      — BLPOP queue: API Gateway → Matcher Service requests
-//   "<clientId>"    — PUBLISH: Matcher Service → API Gateway response
-//   "db_processor"  — LPUSH queue: Matcher Service → Execution Service events
-//   "trade@SYMBOL"  — PUBLISH: Matcher Service → Realtime Service
-//   "depth@SYMBOL"  — PUBLISH: Matcher Service → Realtime Service
+// Queue / channel layout after surgical refactor:
+//
+//   INBOUND (Matcher consumes):
+//     orders:<SYMBOL>:buy    — BUY  orders for a symbol
+//     orders:<SYMBOL>:sell   — SELL orders for a symbol
+//     exchange:control       — CANCEL, GET_DEPTH, ADD_USER, etc.
+//
+//   OUTBOUND (Matcher produces):
+//     <correlationId>        — PUBLISH: per-request response to API Gateway
+//     matches                — LPUSH: MATCH_CREATED events → Execution Service
+//     order_updates          — LPUSH: ORDER_UPDATE events  → Execution Service
+//     trade@<SYMBOL>         — PUBLISH: trade feed          → Realtime Service
+//     depth@<SYMBOL>         — PUBLISH: depth updates       → Realtime Service
 // ---------------------------------------------------------------------------
 
 export class RedisManager {
@@ -27,7 +34,7 @@ export class RedisManager {
     this.client = createClient({
       url: process.env.REDIS_URL ?? "redis://redis:6379",
     });
-    this.client.on("error", (err) => console.error("[Redis] error:", err));
+    this.client.on("error", (err) => console.error("[Matcher Redis] error:", err));
     this.client.connect().catch(console.error);
   }
 
@@ -41,9 +48,20 @@ export class RedisManager {
     this.client.publish(clientId, JSON.stringify(message));
   }
 
-  /** Push a settlement/order-update event to the Execution Service queue */
-  public pushToExecutionQueue(message: DbMessage): void {
-    this.client.lPush("db_processor", JSON.stringify(message));
+  /**
+   * Push a MATCH_CREATED event to the dedicated matches queue.
+   * The Execution Service consumes only from this queue for settlement.
+   */
+  public pushMatchCreated(message: Extract<DbMessage, { type: "MATCH_CREATED" }>): void {
+    this.client.lPush(MATCHES_QUEUE, JSON.stringify(message));
+  }
+
+  /**
+   * Push an ORDER_UPDATE event to the dedicated order_updates queue.
+   * The Execution Service consumes these to update Order status in Postgres.
+   */
+  public pushOrderUpdate(message: Extract<DbMessage, { type: "ORDER_UPDATE" }>): void {
+    this.client.lPush(ORDER_UPDATES_QUEUE, JSON.stringify(message));
   }
 
   /** Publish a realtime event to the Realtime Service */
@@ -51,8 +69,8 @@ export class RedisManager {
     this.client.publish(channel, JSON.stringify(message));
   }
 
-  /** Block-pop the next request from the API Gateway */
-  public async blockingPop(key: string, timeout = 0) {
-    return this.client.brPop(key, timeout);
+  /** Block-pop the next message from a list of queues (priority order) */
+  public async blockingPop(keys: string | string[], timeout = 0) {
+    return this.client.brPop(keys as string[], timeout);
   }
 }

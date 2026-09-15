@@ -16,13 +16,13 @@ import cors    from "cors";
 import { config } from "dotenv";
 config({ quiet: true });
 
-import { EngineClient }  from "./redisClient.js";
-import { orderRouter }   from "./routes/order.js";
-import { depthRouter }   from "./routes/depth.js";
-import { tradesRouter }  from "./routes/trades.js";
-import { priceRouter }   from "./routes/price.js";
-import { stocksRouter }  from "./routes/stocks.js";
-import { newUserRouter } from "./routes/newUser.js";
+import { ExchangeGateway } from "./exchangeGateway.js";
+import { orderRouter }     from "./routes/order.js";
+import { depthRouter }     from "./routes/depth.js";
+import { tradesRouter }    from "./routes/trades.js";
+import { priceRouter }     from "./routes/price.js";
+import { stocksRouter }    from "./routes/stocks.js";
+import { newUserRouter }   from "./routes/newUser.js";
 
 const app  = express();
 const PORT = process.env.PORT ?? 3001;
@@ -30,8 +30,8 @@ const PORT = process.env.PORT ?? 3001;
 app.use(cors());
 app.use(express.json());
 
-// Connect to Redis on startup
-await EngineClient.getInstance().connect();
+// Connect the Exchange Gateway to Redis on startup
+await ExchangeGateway.getInstance().connect();
 
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "api-gateway" }));

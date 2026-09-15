@@ -2,10 +2,10 @@
 // Called after sign-up to load the user's wallet into the Matcher Service's
 // in-memory balance map so they can immediately place orders.
 
-import { Router }       from "express";
-import { EngineClient } from "../redisClient.js";
-import { ADD_USER }     from "@stockx/shared";
-import { prisma }       from "@stockx/execution-service";
+import { Router }           from "express";
+import { ExchangeGateway }  from "../exchangeGateway.js";
+import { ADD_USER }         from "@stockx/shared";
+import { prisma }           from "@stockx/execution-service";
 
 export const newUserRouter = Router();
 
@@ -17,7 +17,7 @@ newUserRouter.post("/", async (req, res) => {
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
     if (!wallet) return res.status(404).json({ error: "Wallet not found" });
 
-    const response = await EngineClient.getInstance().sendRequest({
+    const response = await ExchangeGateway.getInstance().send({
       type: ADD_USER,
       data: { userId, wallet },
     });

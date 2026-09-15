@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PART 2: Exchange Invariant Tests
  *
  * Property/invariant-style tests that verify exchange correctness
@@ -81,7 +81,7 @@ function generateRandomOrders(
 
 describe("Invariant — Quantity Conservation", () => {
   it("submitted quantity = filled quantity + remaining quantity for every order", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
     const rng = new SeededRNG(42);
     const allOrders: Order[] = [];
     const allFills: Fill[] = [];
@@ -120,7 +120,7 @@ describe("Invariant — Quantity Conservation", () => {
       engine.addUser(uid, { INR: 10000000, RIL: 1000000 });
     }
 
-    const placedOrders: Array<{ orderId: bigint; market: string }> = [];
+    const placedOrders: Array<{ orderId: string; market: string }> = [];
 
     for (let i = 0; i < 1000; i++) {
       // 80% place order, 20% cancel
@@ -166,7 +166,7 @@ describe("Invariant — Quantity Conservation", () => {
 
 describe("Invariant — No Crossed Resting Book", () => {
   it("best bid < best ask after any sequence of operations", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
     const rng = new SeededRNG(77);
 
     for (let i = 0; i < 500; i++) {
@@ -201,7 +201,7 @@ describe("Invariant — No Crossed Resting Book", () => {
       engine.addUser(uid, { INR: 10000000, RIL: 1000000 });
     }
 
-    const resting: Array<{ orderId: bigint }> = [];
+    const resting: Array<{ orderId: string }> = [];
 
     for (let i = 0; i < 500; i++) {
       if (rng.next() < 0.15 && resting.length > 0) {
@@ -238,7 +238,7 @@ describe("Invariant — No Crossed Resting Book", () => {
 
 describe("Invariant — No Negative Quantities", () => {
   it("no order should have negative remaining quantity", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
     const rng = new SeededRNG(314);
 
     for (let i = 0; i < 500; i++) {
@@ -299,9 +299,9 @@ describe("Invariant — No Negative Quantities", () => {
 
 describe("Invariant — No Duplicate Fills", () => {
   it("no two fills should share the same tradeId", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
     const rng = new SeededRNG(628);
-    const allTradeIds = new Set<bigint>();
+    const allTradeIds = new Set<string>();
 
     for (let i = 0; i < 500; i++) {
       const order = createTestOrder({
@@ -313,8 +313,8 @@ describe("Invariant — No Duplicate Fills", () => {
       const { fills } = book.addOrder(order);
 
       for (const fill of fills) {
-        expect(allTradeIds.has(fill.tradeId)).toBe(false);
-        allTradeIds.add(fill.tradeId);
+        expect(allTradeIds.has(fill.matchId)).toBe(false);
+        allTradeIds.add(fill.matchId);
       }
     }
   });
@@ -326,7 +326,7 @@ describe("Invariant — No Duplicate Fills", () => {
 
 describe("Invariant — Price-Time Priority", () => {
   it("when two asks exist at the same price, the earlier one fills first", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
 
     const ask1 = createTestOrder({
       side: "sell",
@@ -359,7 +359,7 @@ describe("Invariant — Price-Time Priority", () => {
   });
 
   it("when two bids exist at the same price, the earlier one fills first", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
 
     const bid1 = createTestOrder({
       side: "buy",
@@ -391,7 +391,7 @@ describe("Invariant — Price-Time Priority", () => {
   });
 
   it("price priority should beat time priority", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
 
     // Ask at 100 placed first
     const ask100 = createTestOrder({
@@ -432,7 +432,7 @@ describe("Invariant — Price-Time Priority", () => {
 
 describe("Invariant — Cancellation Correctness", () => {
   it("cancelled order does not participate in future matching", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
 
     const ask = createTestOrder({
       side: "sell",
@@ -456,7 +456,7 @@ describe("Invariant — Cancellation Correctness", () => {
   });
 
   it("cancelling one of many orders at same price leaves others valid", () => {
-    const book = new Orderbook("RIL", [], [], 0);
+    const book = new Orderbook("RIL_INR");
 
     const orders: Order[] = [];
     for (let i = 0; i < 5; i++) {
@@ -548,7 +548,7 @@ describe("Invariant — Balance Conservation", () => {
 
     const initialTotals = engine.getTotalSystemBalances();
     const rng = new SeededRNG(84);
-    const resting: Array<{ orderId: bigint }> = [];
+    const resting: Array<{ orderId: string }> = [];
 
     for (let i = 0; i < 300; i++) {
       if (rng.next() < 0.2 && resting.length > 0) {
@@ -639,8 +639,8 @@ describe("Invariant — Combined Stress Test (1000 orders)", () => {
 
     const initialTotals = engine.getTotalSystemBalances();
     const rng = new SeededRNG(2024);
-    const allTradeIds = new Set<bigint>();
-    const resting: Array<{ orderId: bigint }> = [];
+    const allTradeIds = new Set<string>();
+    const resting: Array<{ orderId: string }> = [];
 
     for (let i = 0; i < 1000; i++) {
       // 15% cancel, 85% new order
@@ -665,8 +665,8 @@ describe("Invariant — Combined Stress Test (1000 orders)", () => {
 
           // Invariant 4: No duplicate trade IDs
           for (const fill of result.fills) {
-            expect(allTradeIds.has(fill.tradeId)).toBe(false);
-            allTradeIds.add(fill.tradeId);
+            expect(allTradeIds.has(fill.matchId)).toBe(false);
+            allTradeIds.add(fill.matchId);
           }
 
           if (result.restingOnBook) {

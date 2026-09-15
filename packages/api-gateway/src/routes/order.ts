@@ -6,10 +6,10 @@
 // GET    /api/v1/order/history — get persisted order history (from DB)
 // ---------------------------------------------------------------------------
 
-import { Router }       from "express";
-import { randomUUID }   from "crypto";
-import { EngineClient } from "../redisClient.js";
-import { prisma }       from "@stockx/execution-service";
+import { Router }           from "express";
+import { randomUUID }        from "crypto";
+import { ExchangeGateway }   from "../exchangeGateway.js";
+import { prisma }            from "@stockx/execution-service";
 import {
   CREATE_ORDER,
   CANCEL_ORDER,
@@ -59,12 +59,26 @@ orderRouter.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to persist order" });
   }
 
-  // Forward to Matcher Service
+  // Forward to Matcher Service via Exchange Gateway
   try {
-    const response = await EngineClient.getInstance().sendRequest({
+    const response = await ExchangeGateway.getInstance().send({
       type: CREATE_ORDER,
       data: { symbol, price, quantity, side, userId, orderType, orderId },
     });
+
+    if (response.type === "ORDER_PLACED") {
+      // exchangeOrderId: the ID the exchange confirmed for this order.
+      // In this single-deployment setup the exchange uses the same UUID
+      // the Order Service generated, but we record it explicitly so the
+      // Order DB has both fields — matching the CortexCookie concept of
+      // tracking the local order ID and the exchange order ID separately.
+      const exchangeOrderId = response.payload.orderId;
+      await prisma.order.update({
+        where: { id: orderId },
+        data:  { exchangeOrderId },
+      }).catch((e) => console.error("[Order] Failed to store exchangeOrderId:", e));
+    }
+
     return res.status(201).json(response.payload);
   } catch (err) {
     // Matcher failed — mark the order cancelled so the DB stays consistent
@@ -87,7 +101,7 @@ orderRouter.delete("/", async (req, res) => {
   }
 
   try {
-    const response = await EngineClient.getInstance().sendRequest({
+    const response = await ExchangeGateway.getInstance().send({
       type: CANCEL_ORDER,
       data: parsed.data,
     });
@@ -110,7 +124,7 @@ orderRouter.get("/open", async (req, res) => {
   }
 
   try {
-    const response = await EngineClient.getInstance().sendRequest({
+    const response = await ExchangeGateway.getInstance().send({
       type: GET_OPEN_ORDERS,
       data: parsed.data,
     });
@@ -140,17 +154,18 @@ orderRouter.get("/history", async (req, res) => {
     });
 
     const serialized = orders.map((o) => ({
-      id:           o.id,
-      userId:       o.userId,
-      symbol:       o.symbol,
-      side:         o.side.toLowerCase(),
-      orderType:    o.orderType.toLowerCase(),
-      price:        o.price.toString(),
-      quantity:     o.quantity.toString(),
-      filledQty:    o.filledQty.toString(),
-      remainingQty: o.remainingQty.toString(),
-      status:       o.status,
-      createdAt:    o.createdAt.toISOString(),
+      id:              o.id,
+      exchangeOrderId: o.exchangeOrderId ?? null,
+      userId:          o.userId,
+      symbol:          o.symbol,
+      side:            o.side.toLowerCase(),
+      orderType:       o.orderType.toLowerCase(),
+      price:           o.price.toString(),
+      quantity:        o.quantity.toString(),
+      filledQty:       o.filledQty.toString(),
+      remainingQty:    o.remainingQty.toString(),
+      status:          o.status,
+      createdAt:       o.createdAt.toISOString(),
     }));
 
     return res.json(serialized);

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PART 1: Core Trading Engine Unit Tests
  *
  * Tests the Orderbook class directly (the actual matching engine).
@@ -33,7 +33,7 @@ describe("Orderbook — Order Insertion", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should add a buy order to bids when no matching asks exist", () => {
@@ -129,7 +129,7 @@ describe("Orderbook — Limit Order Matching", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should match a buy order against a resting ask at the same price", () => {
@@ -268,7 +268,7 @@ describe("Orderbook — Partial Fills", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should partially fill a buy order when ask has less quantity", () => {
@@ -359,7 +359,7 @@ describe("Orderbook — Multiple Fills", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should fill a buy order across multiple ask levels", () => {
@@ -470,7 +470,7 @@ describe("Orderbook — Price-Time Priority", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should match the best ask (lowest price) first for buy orders", () => {
@@ -618,7 +618,7 @@ describe("Orderbook — Order Cancellation", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should cancel a resting bid order", () => {
@@ -631,7 +631,7 @@ describe("Orderbook — Order Cancellation", () => {
     book.addOrder(buy);
     expect(book.bids).toHaveLength(1);
 
-    const price = book.cancelBid(buy);
+    const price = book.cancelBid(buy.orderId);
     expect(price).toBe(100);
     expect(book.bids).toHaveLength(0);
   });
@@ -646,7 +646,7 @@ describe("Orderbook — Order Cancellation", () => {
     book.addOrder(sell);
     expect(book.asks).toHaveLength(1);
 
-    const price = book.cancelAsk(sell);
+    const price = book.cancelAsk(sell.orderId);
     expect(price).toBe(100);
     expect(book.asks).toHaveLength(0);
   });
@@ -657,7 +657,7 @@ describe("Orderbook — Order Cancellation", () => {
       price: 100,
       quantity: 10,
     });
-    const result = book.cancelBid(fakeOrder);
+    const result = book.cancelBid(fakeOrder.orderId);
     expect(result).toBeUndefined();
   });
 
@@ -667,7 +667,7 @@ describe("Orderbook — Order Cancellation", () => {
       price: 100,
       quantity: 10,
     });
-    const result = book.cancelAsk(fakeOrder);
+    const result = book.cancelAsk(fakeOrder.orderId);
     expect(result).toBeUndefined();
   });
 
@@ -679,7 +679,7 @@ describe("Orderbook — Order Cancellation", () => {
       userId: "seller",
     });
     book.addOrder(sell);
-    book.cancelAsk(sell);
+    book.cancelAsk(sell.orderId);
 
     const buy = createTestOrder({
       side: "buy",
@@ -711,7 +711,7 @@ describe("Orderbook — Order Cancellation", () => {
     book.addOrder(sell1);
     book.addOrder(sell2);
 
-    book.cancelAsk(sell1);
+    book.cancelAsk(sell1.orderId);
 
     expect(book.asks).toHaveLength(1);
     expect(book.asks[0]!.orderId).toBe(sell2.orderId);
@@ -722,7 +722,7 @@ describe("Orderbook — Depth", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should return empty depth for an empty book", () => {
@@ -797,7 +797,7 @@ describe("Orderbook — Open Orders", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should return open orders for a specific user", () => {
@@ -841,7 +841,7 @@ describe("Orderbook — IOC (Immediate or Cancel) Orders", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should fill what it can and NOT rest on book when rest=false", () => {
@@ -888,7 +888,7 @@ describe("Orderbook — Trade ID Generation", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should generate unique trade IDs for each fill", () => {
@@ -918,8 +918,8 @@ describe("Orderbook — Trade ID Generation", () => {
     const { fills } = book.addOrder(buy);
 
     expect(fills).toHaveLength(2);
-    expect(fills[0]!.tradeId).not.toBe(fills[1]!.tradeId);
-    expect(typeof fills[0]!.tradeId).toBe("bigint");
+    expect(fills[0]!.matchId).not.toBe(fills[1]!.matchId);
+    expect(typeof fills[0]!.matchId).toBe("string");
   });
 });
 
@@ -927,7 +927,7 @@ describe("Orderbook — Edge Cases", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should handle exact quantity matches (quantity = 1)", () => {
@@ -1076,7 +1076,7 @@ describe("Orderbook — Floating-Point Precision", () => {
   let book: Orderbook;
 
   beforeEach(() => {
-    book = new Orderbook("RIL", [], [], 0);
+    book = new Orderbook("RIL_INR");
   });
 
   it("should demonstrate potential floating-point imprecision with 0.1 + 0.2", () => {

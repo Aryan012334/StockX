@@ -89,21 +89,26 @@ model Wallet {
 // ---------------------------------------------------------------------------
 
 model Order {
-  id           String      @id @default(uuid())
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  symbol       String
-  stock        Stock       @relation(fields: [symbol], references: [symbol])
-  side         OrderSide
-  orderType    OrderType
-  price        Decimal                          // limit price (0 for market)
-  quantity     Decimal
-  filledQty    Decimal     @default(0)
-  remainingQty Decimal
-  status       OrderStatus @default(OPEN)
+  id               String      @id @default(uuid())
+  userId           String
+  user             User        @relation(fields: [userId], references: [id])
+  symbol           String
+  stock            Stock       @relation(fields: [symbol], references: [symbol])
+  side             OrderSide
+  orderType        OrderType
+  price            Decimal                          // limit price (0 for market)
+  quantity         Decimal
+  filledQty        Decimal     @default(0)
+  remainingQty     Decimal
+  status           OrderStatus @default(OPEN)
+  // exchangeOrderId: the ID assigned by the exchange (Matcher Service).
+  // Stored separately from the client-generated id so both identifiers
+  // are visible — matches the CortexCookie Order DB concept of tracking
+  // both the internal order ID and the exchange order ID.
+  exchangeOrderId  String?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @default(now()) @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
 
   @@index([userId])
   @@index([symbol, status])

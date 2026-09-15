@@ -30,6 +30,7 @@ export interface Stock {
 
 export interface OrderRecord {
   id: string;
+  exchangeOrderId: string | null;  // ID assigned by the exchange (CortexCookie)
   userId: string;
   symbol: string;
   side: "buy" | "sell";

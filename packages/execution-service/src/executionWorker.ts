@@ -2,24 +2,31 @@
 // Execution Service — Match Execution Worker
 //
 // CortexCookie responsibilities:
-//   - Consume MATCH_CREATED events from Redis "db_processor" queue
+//   - Consume MATCH_CREATED events from Redis "matches" queue
 //   - Check idempotency: skip if matchId already processed (unique constraint)
-//   - Validate buyer has sufficient funds
-//   - Validate seller has sufficient holdings
 //   - Atomically within a single PostgreSQL transaction:
-//       1. Debit buyer wallet (balance)
-//       2. Credit seller wallet (balance)
-//       3. Transfer stock ownership (assetsHeld)
-//       4. Insert MatchExecution record  ← idempotency key
-//       5. Insert public Trade record
-//       6. Insert Transaction audit records (buyer + seller)
-//   - Consume ORDER_UPDATE events and persist Order status changes
+//       1. Insert MatchExecution record  ← idempotency key
+//       2. Lock wallet rows FOR UPDATE
+//       3. Debit buyer wallet (balance)
+//       4. Credit seller wallet (balance)
+//       5. Transfer stock ownership (assetsHeld)
+//       6. Insert public Trade record
+//       7. Insert Transaction audit records (buyer + seller)
+//   - Concurrently consume ORDER_UPDATE events from "order_updates" queue
 //   - On any failure: ROLLBACK — no partial state
+//
+// Queue layout (after surgical refactor):
+//   matches       — MATCH_CREATED events only  (settlement path)
+//   order_updates — ORDER_UPDATE events only   (order status path)
+//
+// The two concerns are separated into two independent worker loops running
+// in parallel so a slow ORDER_UPDATE never blocks match settlement.
 // ---------------------------------------------------------------------------
 
-import { Client } from "pg";
+import { Client }       from "pg";
 import { createClient } from "redis";
-import { config } from "dotenv";
+import { config }       from "dotenv";
+import { MATCHES_QUEUE, ORDER_UPDATES_QUEUE } from "@stockx/shared";
 
 config({ quiet: true });
 
@@ -49,12 +56,8 @@ type OrderUpdateData = {
   userId?:      string;
 };
 
-type DbMessage =
-  | { type: "MATCH_CREATED"; data: MatchCreatedData }
-  | { type: "ORDER_UPDATE";  data: OrderUpdateData };
-
 // ---------------------------------------------------------------------------
-// Main worker loop
+// Main — start two parallel worker loops
 // ---------------------------------------------------------------------------
 
 const pgClient = new Client({
@@ -65,26 +68,56 @@ async function main() {
   await pgClient.connect();
   console.log("[Execution] Connected to PostgreSQL");
 
-  const redisClient = createClient({
-    url: process.env.REDIS_URL ?? "redis://redis:6379",
-  });
-  await redisClient.connect();
-  console.log("[Execution] Connected to Redis — waiting for events...");
+  const matchesRedis = createClient({ url: process.env.REDIS_URL ?? "redis://redis:6379" });
+  const updatesRedis = createClient({ url: process.env.REDIS_URL ?? "redis://redis:6379" });
 
+  await matchesRedis.connect();
+  await updatesRedis.connect();
+  console.log("[Execution] Connected to Redis — starting workers");
+  console.log(`[Execution] Settlement worker  listening on: ${MATCHES_QUEUE}`);
+  console.log(`[Execution] Order-update worker listening on: ${ORDER_UPDATES_QUEUE}`);
+
+  // Run both loops concurrently (Promise.all keeps them alive in parallel)
+  await Promise.all([
+    settlementLoop(matchesRedis),
+    orderUpdateLoop(updatesRedis),
+  ]);
+}
+
+// ---------------------------------------------------------------------------
+// Settlement loop — consumes MATCH_CREATED from the dedicated "matches" queue
+// ---------------------------------------------------------------------------
+
+async function settlementLoop(redis: ReturnType<typeof createClient>) {
   while (true) {
     try {
-      const response = await redisClient.brPop("db_processor", 0);
+      const response = await (redis as any).brPop(MATCHES_QUEUE, 0);
       if (!response) continue;
-
-      const msg: DbMessage = JSON.parse(response.element);
-
+      const msg = JSON.parse(response.element);
       if (msg.type === "MATCH_CREATED") {
         await handleMatchCreated(msg.data);
-      } else if (msg.type === "ORDER_UPDATE") {
+      }
+    } catch (err) {
+      console.error("[Execution] settlementLoop error:", err);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Order-update loop — consumes ORDER_UPDATE from the "order_updates" queue
+// ---------------------------------------------------------------------------
+
+async function orderUpdateLoop(redis: ReturnType<typeof createClient>) {
+  while (true) {
+    try {
+      const response = await (redis as any).brPop(ORDER_UPDATES_QUEUE, 0);
+      if (!response) continue;
+      const msg = JSON.parse(response.element);
+      if (msg.type === "ORDER_UPDATE") {
         await handleOrderUpdate(msg.data);
       }
     } catch (err) {
-      console.error("[Execution] Unhandled worker error:", err);
+      console.error("[Execution] orderUpdateLoop error:", err);
     }
   }
 }

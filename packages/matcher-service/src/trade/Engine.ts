@@ -222,7 +222,7 @@ export class Engine {
           }
 
           // Emit ORDER_UPDATE so execution-service marks it CANCELLED in DB
-          RedisManager.getInstance().pushToExecutionQueue({
+          RedisManager.getInstance().pushOrderUpdate({
             type: ORDER_UPDATE,
             data: {
               orderId,
@@ -533,7 +533,7 @@ export class Engine {
   }
 
   // -------------------------------------------------------------------------
-  // Emit MATCH_CREATED events → execution-service via "db_processor" queue
+  // Emit MATCH_CREATED events → "matches" queue → Execution Service
   // -------------------------------------------------------------------------
 
   private emitMatchCreatedEvents(
@@ -544,12 +544,12 @@ export class Engine {
     orderId:  string,
   ) {
     for (const fill of fills) {
-      const buyerId  = side === "buy" ? userId          : fill.otherUserId;
-      const sellerId = side === "sell" ? userId         : fill.otherUserId;
-      const buyOrderId  = side === "buy" ? orderId      : fill.makerOrderId;
-      const sellOrderId = side === "sell" ? orderId     : fill.makerOrderId;
+      const buyerId     = side === "buy"  ? userId          : fill.otherUserId;
+      const sellerId    = side === "sell" ? userId          : fill.otherUserId;
+      const buyOrderId  = side === "buy"  ? orderId         : fill.makerOrderId;
+      const sellOrderId = side === "sell" ? orderId         : fill.makerOrderId;
 
-      RedisManager.getInstance().pushToExecutionQueue({
+      RedisManager.getInstance().pushMatchCreated({
         type: MATCH_CREATED,
         data: {
           matchId:       fill.matchId,
@@ -569,7 +569,7 @@ export class Engine {
   }
 
   // -------------------------------------------------------------------------
-  // Emit ORDER_UPDATE events → execution-service
+  // Emit ORDER_UPDATE events → "order_updates" queue → Execution Service
   // -------------------------------------------------------------------------
 
   private emitOrderUpdateEvents(
@@ -589,7 +589,7 @@ export class Engine {
       executedQty > 0    ? "PARTIALLY_FILLED" : "OPEN";
 
     // Taker order update
-    RedisManager.getInstance().pushToExecutionQueue({
+    RedisManager.getInstance().pushOrderUpdate({
       type: ORDER_UPDATE,
       data: {
         orderId,
@@ -604,15 +604,15 @@ export class Engine {
       },
     });
 
-    // Maker order updates (each fill may have a different maker)
+    // Maker order updates
     for (const fill of fills) {
-      RedisManager.getInstance().pushToExecutionQueue({
+      RedisManager.getInstance().pushOrderUpdate({
         type: ORDER_UPDATE,
         data: {
-          orderId:     fill.makerOrderId,
-          executedQty: fill.qty,
-          remainingQty: 0,  // execution-service will calculate correct value
-          status: "FILLED", // may be overwritten if partial; execution-service recalculates
+          orderId:      fill.makerOrderId,
+          executedQty:  fill.qty,
+          remainingQty: 0,
+          status:       "FILLED",
         },
       });
     }
