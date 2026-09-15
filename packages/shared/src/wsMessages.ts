@@ -1,0 +1,56 @@
+export type TickerUpdateMessage = {
+  stream: string;
+  data: {
+    e: "ticker";
+    c?: string;
+    h?: string;
+    l?: string;
+    v?: string;
+    V?: string;
+    s?: string;
+    id: string;
+  };
+};
+
+export type DepthUpdateMessage = {
+  stream: string;
+  data: {
+    b?: [string, string][];
+    a?: [string, string][];
+    e: "depth";
+  };
+};
+
+export type TradeAddedMessage = {
+  stream: string;
+  data: {
+    e: "trade";
+    t: string; // Trade ID
+    T: number; // Trade timestamp (epoch ms UTC)
+    m: boolean; // Is buyer maker
+    p: string; // Price
+    q: string; // Quantity
+    s: string; // Symbol
+  };
+};
+export type WsMessage =
+  | TickerUpdateMessage
+  | DepthUpdateMessage
+  | TradeAddedMessage;
+
+export const SUBSCRIBE = "SUBSCRIBE";
+export const UNSUBSCRIBE = "UNSUBSCRIBE";
+
+export type SubscribeMessage = {
+  method: typeof SUBSCRIBE;
+  params: string[];
+};
+
+export type UnsubscribeMessage = {
+  method: typeof UNSUBSCRIBE;
+  params: string[];
+};
+
+export type IncomingMessage = SubscribeMessage | UnsubscribeMessage;
+
+export type OutgoingMessage = TickerUpdateMessage | DepthUpdateMessage;

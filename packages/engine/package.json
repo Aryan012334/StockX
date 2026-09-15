@@ -1,0 +1,21 @@
+{
+  "name": "@exchange-lab/engine",
+  "version": "1.0.0",
+  "description": "engine for handling orders",
+  "license": "ISC",
+  "author": "vivek",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./dist/trade/Snowflake.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@exchange-lab/api": "*",
+    "@exchange-lab/db": "*",
+    "@types/redis": "^4.0.10"
+  }
+}
