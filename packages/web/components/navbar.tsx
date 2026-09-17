@@ -72,7 +72,7 @@ export default function Navbar() {
           <Link href="/">
             <Image
               src="/logo.svg"
-              alt="Backpack logo"
+              alt="StockX logo"
               width={170}
               height={60}
               priority

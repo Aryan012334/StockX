@@ -1,4 +1,4 @@
-import { Separator } from "@/components/ui/separator";
+﻿import { Separator } from "@/components/ui/separator";
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +23,7 @@ export default function LegalPage() {
         </h1>
 
         <p className="mt-6 text-base leading-8 text-muted-foreground">
-          XCHG Lab is an experimental exchange infrastructure project intended for research and educational purposes. Please read our terms and privacy policy carefully, as they reflect the non-production nature of this platform.
+          StockX is an experimental exchange infrastructure project intended for research and educational purposes. Please read our terms and privacy policy carefully, as they reflect the non-production nature of this platform.
         </p>
       </section>
 
@@ -46,7 +46,7 @@ export default function LegalPage() {
           {[
             {
               title: "1. Experimental Platform",
-              description: "XCHG Lab is built from scratch to explore exchange infrastructure. It is NOT a real trading platform. All assets, balances, and trades on this platform are simulated and have no real-world value.",
+              description: "StockX is built from scratch to explore exchange infrastructure. It is NOT a real trading platform. All assets, balances, and trades on this platform are simulated and have no real-world value.",
             },
             {
               title: "2. No Financial Liability",

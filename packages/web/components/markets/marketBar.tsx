@@ -1,135 +1,128 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Ticker } from "@stockx/shared";
-import { getTicker } from "@/lib/utils/apiClient";
+import type { MarketQuote } from "@stockx/shared";
+import { getMarketQuote } from "@/lib/utils/apiClient";
 import { MarketDataManager } from "@/lib/utils/MarketDataManager";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ChevronUp, ChevronDown, Clock } from "lucide-react";
 
 export const MarketBar = ({ market }: { market: string }) => {
-  const [ticker, setTicker] = useState<Ticker | null>(null);
-  const [trend, setTrend] = useState<"up" | "down" | "flat">("flat");
-  const lastPriceRef = useRef<number | null>(null);
+  // market = "AAPL_USD"
+  const symbol = market.split("_")[0] ?? market;
 
+  const [quote,    setQuote]    = useState<MarketQuote | null>(null);
+  const [lastTrade, setLastTrade] = useState<string | null>(null);
+  const [trend,    setTrend]    = useState<"up" | "down" | "flat">("flat");
+  const prevPriceRef = useRef<number | null>(null);
+
+  // Load reference market price
   useEffect(() => {
-    let isMounted = true;
-
-    getTicker(market)
-      .then((data) => {
-        if (!isMounted || !data) return;
-        setTicker(data);
-        const p = Number(data.lastPrice);
-        if (!Number.isNaN(p)) lastPriceRef.current = p;
+    getMarketQuote(symbol)
+      .then((q) => {
+        if (q) setQuote(q);
       })
-      .catch((err) =>
-        console.error(`Failed to fetch initial ticker for ${market}:`, err),
-      );
+      .catch(() => {});
+  }, [symbol]);
 
-    const manager = MarketDataManager.getInstance();
-    const callbackId = `TRADE-${market}`;
+  // Live trade price via WS
+  useEffect(() => {
+    const manager    = MarketDataManager.getInstance();
+    const callbackId = `MBAR-${market}`;
 
-    manager.registerCallback("trade", callbackId, (data: Partial<Ticker>) => {
-      if (!isMounted) return;
+    manager.registerCallback("trade", callbackId, (data: any) => {
       if (data.symbol && data.symbol !== market) return;
-
-      const newPrice = Number(data.lastPrice);
-      if (!Number.isNaN(newPrice) && lastPriceRef.current !== null) {
-        if (newPrice > lastPriceRef.current) setTrend("up");
-        else if (newPrice < lastPriceRef.current) setTrend("down");
+      const newPrice = Number(data.price ?? data.lastPrice);
+      if (!Number.isNaN(newPrice) && newPrice > 0) {
+        if (prevPriceRef.current !== null) {
+          setTrend(newPrice > prevPriceRef.current ? "up" : newPrice < prevPriceRef.current ? "down" : "flat");
+        }
+        prevPriceRef.current = newPrice;
+        setLastTrade(newPrice.toFixed(2));
       }
-      if (!Number.isNaN(newPrice)) lastPriceRef.current = newPrice;
-
-      setTicker((prev) => ({ ...(prev || {}), ...data }) as Ticker);
     });
 
-    manager.sendMessage({
-      method: "SUBSCRIBE",
-      params: [`trade@${market}`],
-    });
+    manager.sendMessage({ method: "SUBSCRIBE", params: [`trade@${market}`] });
 
     return () => {
-      isMounted = false;
       manager.deRegisterCallback("trade", callbackId);
-      manager.sendMessage({
-        method: "UNSUBSCRIBE",
-        params: [`trade@${market}`],
-      });
+      manager.sendMessage({ method: "UNSUBSCRIBE", params: [`trade@${market}`] });
     };
   }, [market]);
 
-  const priceChangeNum = Number(ticker?.priceChange ?? 0);
-  // emerald-500 matches the buy-side / positive-value color used
-  // everywhere else (OrderEntry, OrdersTab, P&L badges) — plain
-  // green-500 was a different hue for the same "up" meaning.
-  const trendColor =
-    trend === "up"
-      ? "text-emerald-500"
-      : trend === "down"
-        ? "text-red-500"
-        : priceChangeNum >= 0
-          ? "text-emerald-500"
-          : "text-red-500";
+  const refPrice      = quote?.price ?? null;
+  const change        = quote?.change ?? 0;
+  const changePct     = quote?.changePercent ?? 0;
+  const isUp          = change >= 0;
+  const priceColor    = trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : isUp ? "text-emerald-400" : "text-red-400";
+  const displayPrice  = lastTrade ?? (refPrice !== null ? refPrice.toFixed(2) : null);
 
   return (
     <div className="h-full w-full flex items-center">
       <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex h-full w-full items-center gap-4 px-2 lg:gap-6 lg:px-4">
-          {/* Pair */}
-          <MarketDisplay market={market} />
-
-          <Separator orientation="vertical" className="h-8 bg-border" />
-
-          {/* Price */}
+        <div className="flex h-full w-full items-center gap-4 px-3 lg:gap-6 lg:px-4">
+          {/* Symbol */}
           <div className="flex shrink-0 flex-col justify-center">
-            <span
-              className={`text-lg font-bold tabular-nums leading-tight transition-colors duration-300 ${trendColor}`}>
-              ₹{ticker?.lastPrice ?? "--"}
-            </span>
-
-            <span className={`text-xs tabular-nums leading-none ${trendColor}`}>
-              {priceChangeNum >= 0 ? "+" : ""}
-              {ticker?.priceChange ?? "0.00"} (
-              {Number(ticker?.priceChangePercent ?? 0).toFixed(2)}%)
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-bold text-white">{symbol}</span>
+              <span className="text-xs text-zinc-500">/ USD</span>
+            </div>
+            <span className="text-[10px] text-zinc-600 truncate max-w-[120px]">
+              {quote?.companyName ?? symbol}
             </span>
           </div>
 
-          <Separator orientation="vertical" className="h-8 bg-border" />
+          <Separator orientation="vertical" className="h-7 bg-white/10" />
 
-          {/* Metrics */}
-          <Metric label="24H High" value={ticker?.high ?? "--"} />
-          <Metric label="24H Low" value={ticker?.low ?? "--"} />
-          <Metric label="Volume" value={ticker?.volume ?? "--"} />
+          {/* Price */}
+          <div className="flex shrink-0 flex-col justify-center">
+            <span className={`text-xl font-bold tabular-nums transition-colors duration-200 ${priceColor}`}>
+              {displayPrice ? `$${displayPrice}` : "--"}
+            </span>
+            {refPrice !== null && (
+              <span className={`flex items-center gap-0.5 text-xs font-medium tabular-nums ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                {isUp ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                {isUp ? "+" : ""}{change.toFixed(2)} ({isUp ? "+" : ""}{changePct.toFixed(2)}%)
+              </span>
+            )}
+          </div>
+
+          <Separator orientation="vertical" className="h-7 bg-white/10" />
+
+          {/* OHLV metrics */}
+          {[
+            { label: "OPEN",       value: refPrice !== null ? `$${(quote?.open ?? 0).toFixed(2)}` : "--" },
+            { label: "24H HIGH",   value: refPrice !== null ? `$${(quote?.dayHigh ?? 0).toFixed(2)}` : "--" },
+            { label: "24H LOW",    value: refPrice !== null ? `$${(quote?.dayLow ?? 0).toFixed(2)}` : "--" },
+            { label: "PREV CLOSE", value: refPrice !== null ? `$${(quote?.previousClose ?? 0).toFixed(2)}` : "--" },
+            {
+              label: "VOLUME",
+              value: quote?.volume
+                ? quote.volume >= 1e6
+                  ? `${(quote.volume / 1e6).toFixed(2)}M`
+                  : quote.volume >= 1e3
+                    ? `${(quote.volume / 1e3).toFixed(1)}K`
+                    : quote.volume.toFixed(0)
+                : "--",
+            },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex min-w-[70px] shrink-0 flex-col justify-center">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">{label}</span>
+              <span className="text-xs font-medium text-zinc-200 tabular-nums">{value}</span>
+            </div>
+          ))}
+
+          {/* Delayed indicator */}
+          {quote?.isDelayed && (
+            <div className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-400">
+              <Clock className="size-2.5" />
+              Delayed
+            </div>
+          )}
         </div>
-
         <ScrollBar orientation="horizontal" className="invisible" />
       </ScrollArea>
     </div>
   );
 };
-
-function MarketDisplay({ market }: { market: string }) {
-  const [baseAsset = "UNKNOWN", quoteAsset = ""] = market.split("_");
-
-  return (
-    <div className="flex shrink-0 items-baseline gap-1">
-      <span className="text-lg font-semibold tracking-tight">{baseAsset}</span>
-      {quoteAsset && (
-        <span className="text-xs text-muted-foreground">/{quoteAsset}</span>
-      )}
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex min-w-[80px] flex-col justify-center">
-      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="text-sm font-medium tabular-nums leading-tight">
-        {value}
-      </span>
-    </div>
-  );
-}

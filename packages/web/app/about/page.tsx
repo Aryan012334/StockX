@@ -1,4 +1,4 @@
-import ContactCard from "@/components/contactCard";
+﻿import ContactCard from "@/components/contactCard";
 
 const PRINCIPLES = [
   {
@@ -62,7 +62,7 @@ export default function AboutPage() {
           </p>
 
           <p>
-            <span className="font-medium text-foreground">XCHG Lab</span> is an
+            <span className="font-medium text-foreground">StockX</span> is an
             exchange infrastructure project that rebuilds the core systems
             behind a modern electronic exchange—including the matching engine,
             order book, market data pipeline, and trading interface—to explore
@@ -115,7 +115,7 @@ export default function AboutPage() {
           </h2>
 
           <p className="mt-4 leading-7 text-muted-foreground">
-            XCHG Lab is built using a modern TypeScript stack focused on
+            StockX is built using a modern TypeScript stack focused on
             real-time communication, reliable persistence, and modular backend
             services.
           </p>
@@ -164,7 +164,7 @@ export default function AboutPage() {
         </div>
         <div className="border-t border-border py-12">
           <p className="max-w-6xl text-sm leading-7 text-muted-foreground">
-            XCHG Lab is an Experimental exchange infrastructure project focused
+            StockX is an Experimental exchange infrastructure project focused
             on exchange infrastructure, distributed systems, and low-latency
             backend architecture. It is intended for research, experimentation,
             and education rather than production trading.

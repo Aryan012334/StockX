@@ -149,6 +149,7 @@ exports.Prisma.AccountScalarFieldEnum = {
 exports.Prisma.StockScalarFieldEnum = {
   symbol: 'symbol',
   companyName: 'companyName',
+  sector: 'sector',
   status: 'status',
   baseAsset: 'baseAsset',
   quoteAsset: 'quoteAsset',
@@ -156,11 +157,44 @@ exports.Prisma.StockScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.MarketQuoteScalarFieldEnum = {
+  symbol: 'symbol',
+  price: 'price',
+  previousClose: 'previousClose',
+  open: 'open',
+  dayHigh: 'dayHigh',
+  dayLow: 'dayLow',
+  volume: 'volume',
+  change: 'change',
+  changePercent: 'changePercent',
+  isDelayed: 'isDelayed',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.WalletScalarFieldEnum = {
   userId: 'userId',
   balance: 'balance',
+  lockedBalance: 'lockedBalance',
   assetsHeld: 'assetsHeld',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.HoldingScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  quantity: 'quantity',
+  lockedQuantity: 'lockedQuantity',
+  averageCost: 'averageCost',
+  realizedPnl: 'realizedPnl',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WatchlistScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  symbol: 'symbol',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {
@@ -173,6 +207,7 @@ exports.Prisma.OrderScalarFieldEnum = {
   quantity: 'quantity',
   filledQty: 'filledQty',
   remainingQty: 'remainingQty',
+  averageFillPrice: 'averageFillPrice',
   status: 'status',
   exchangeOrderId: 'exchangeOrderId',
   createdAt: 'createdAt',
@@ -278,14 +313,21 @@ exports.TransactionType = exports.$Enums.TransactionType = {
 exports.TransactionCategory = exports.$Enums.TransactionCategory = {
   SIGNUP_BONUS: 'SIGNUP_BONUS',
   ORDER_BUY: 'ORDER_BUY',
-  ORDER_SELL: 'ORDER_SELL'
+  ORDER_SELL: 'ORDER_SELL',
+  DEPOSIT: 'DEPOSIT',
+  WITHDRAWAL: 'WITHDRAWAL',
+  ORDER_BUY_REFUND: 'ORDER_BUY_REFUND',
+  ORDER_SELL_REFUND: 'ORDER_SELL_REFUND'
 };
 
 exports.Prisma.ModelName = {
   User: 'User',
   Account: 'Account',
   Stock: 'Stock',
+  MarketQuote: 'MarketQuote',
   Wallet: 'Wallet',
+  Holding: 'Holding',
+  Watchlist: 'Watchlist',
   Order: 'Order',
   MatchExecution: 'MatchExecution',
   Trade: 'Trade',

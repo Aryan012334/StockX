@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, {
   useCallback,
@@ -43,14 +43,14 @@ const FEATURES = [
   },
   {
     title: "Nothing at stake",
-    body: "Break a strategy, blow the account, start over. It's a ₹50,000 balance that was never real to begin with.",
+    body: "Break a strategy, blow the account, start over. It's a $50,000 balance that was never real to begin with.",
   },
 ];
 
 const NEW_STEPS = [
   {
     title: "Create an Account",
-    body: "Sign up in seconds and instantly receive your ₹50,000 virtual balance.",
+    body: "Sign up in seconds and instantly receive your $50,000 virtual balance.",
     icon: UserPlus,
   },
   {
@@ -71,21 +71,21 @@ const NEW_STEPS = [
 ];
 
 const AVAILABLE_MARKETS = [
-  { symbol: "RIL_INR", name: "Reliance Industries" },
-  { symbol: "TATA_INR", name: "Tata Motors" },
-  { symbol: "SOL_INR", name: "Solana" },
+  { symbol: "AAPL_USD", name: "Apple Inc." },
+  { symbol: "MSFT_USD", name: "Microsoft Corp." },
+  { symbol: "NVDA_USD", name: "NVIDIA Corp." },
 ];
 
 const POLL_INTERVAL_MS = 5000;
 
 // Formatting helpers
 
-const priceFormatter = new Intl.NumberFormat("en-IN", {
+const priceFormatter = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
 
-const volumeFormatter = new Intl.NumberFormat("en-IN", {
+const volumeFormatter = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
@@ -154,7 +154,7 @@ function TickerTape({
               <span className="font-medium text-zinc-300">
                 {t.symbol?.replace("_", "/")}
               </span>
-              <span>₹{formatPrice(t.lastPrice)}</span>
+              <span>${formatPrice(t.lastPrice)}</span>
               <span className={positive ? "text-emerald-400" : "text-red-400"}>
                 {positive ? "+" : ""}
                 {t.priceChangePercent}%
@@ -249,7 +249,7 @@ function MarketCard({
       <div className="mt-5 flex items-end justify-between gap-3">
         <div className="font-mono text-xl font-semibold text-white">
           {live ? (
-            `₹${formatPrice(live.lastPrice)}`
+            `$${formatPrice(live.lastPrice)}`
           ) : (
             <span className="inline-block h-6 w-20 animate-pulse rounded bg-[#23262B]" />
           )}
@@ -381,7 +381,7 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link href="/trade/RIL_INR">
+              <Link href="/trade/AAPL_USD">
                 <Button className="h-11 rounded-md bg-[var(--brand-blue)] px-6 text-sm font-medium text-white shadow-lg shadow-[var(--brand-blue)]/20 hover:bg-[var(--brand-blue)]/90">
                   Start trading
                   <ArrowRight className="ml-2 size-4" />
@@ -399,7 +399,7 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-xs text-zinc-500">
               <span>
                 <strong className="font-mono font-medium text-zinc-200">
-                  ₹50,000
+                  $50,000
                 </strong>{" "}
                 starting balance
               </span>
@@ -435,7 +435,7 @@ export default function LandingPage() {
                 }}>
                 <Image
                   src="/dash.webp"
-                  alt="XCHG Lab trading terminal"
+                  alt="StockX trading terminal"
                   fill
                   className="object-contain"
                   quality={100}
@@ -587,7 +587,7 @@ export default function LandingPage() {
       <section className="border-t border-[#1E2126] py-24">
         <div className="mx-auto max-w-xl px-6 text-center">
           <h2 className="font-display text-2xl font-semibold leading-tight text-white sm:text-3xl">
-            ₹50,000 you can actually afford to lose.
+            $50,000 you can actually afford to lose.
           </h2>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
             Free account, live prices, zero risk. Takes a minute.

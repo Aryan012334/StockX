@@ -4,16 +4,17 @@ export * from "./wsMessages.js";
 export * from "./dbMessages.js";
 export * from "./webUI.js";
 
-export const BASE_CURRENCY = "INR";
-export const SUPPORTED_SYMBOLS = ["RIL", "TATA", "SOL"] as const;
-export type SupportedSymbol = (typeof SUPPORTED_SYMBOLS)[number];
+export const BASE_CURRENCY = "USD";
 
-// All symbol-specific queue names for the Matcher to listen on at startup
-export function allSymbolQueues(): string[] {
-  const queues: string[] = [];
-  for (const sym of SUPPORTED_SYMBOLS) {
-    const ticker = `${sym}_${BASE_CURRENCY}`;
-    queues.push(`orders:${ticker}:buy`, `orders:${ticker}:sell`);
-  }
-  return queues;
-}
+// Queue name helpers — used by ExchangeGateway and Matcher
+export function buyQueueNameFor(symbol: string):  string { return `orders:${symbol}:buy`; }
+export function sellQueueNameFor(symbol: string): string { return `orders:${symbol}:sell`; }
+
+export const EXCHANGE_CONTROL_QUEUE = "exchange:control";
+export const MATCHES_QUEUE          = "matches";
+export const ORDER_UPDATES_QUEUE    = "order_updates";
+
+// allSymbolQueues: matcher now creates order books on demand for 150+ stocks.
+// Returns empty array — matcher listens only on exchange:control at startup
+// and adds symbol queues dynamically as orders arrive.
+export function allSymbolQueues(): string[] { return []; }

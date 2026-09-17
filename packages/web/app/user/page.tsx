@@ -1,4 +1,4 @@
-﻿import { getServerSession }             from "next-auth";
+import { getServerSession }             from "next-auth";
 import { authOptions }                  from "@/lib/auth";
 import { prisma }                       from "@stockx/execution-service";
 import { redirect }                     from "next/navigation";
@@ -27,7 +27,7 @@ export default async function UserProfilePage() {
     .toUpperCase()
     .slice(0, 2);
 
-  const balance = Number(user.wallet?.balance ?? 0).toLocaleString("en-IN", {
+  const balance = Number(user.wallet?.balance ?? 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
   });
 
@@ -90,7 +90,7 @@ export default async function UserProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-4xl font-semibold text-foreground">₹{balance}</p>
+              <p className="text-4xl font-semibold text-foreground">${balance}</p>
               <p className="mt-1 text-sm text-muted-foreground">INR available</p>
             </div>
             <div className="flex gap-2">

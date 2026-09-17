@@ -28,8 +28,8 @@ import { config }        from "dotenv";
 import type { EngineRequest, EngineResponse } from "@stockx/shared";
 import {
   CREATE_ORDER,
-  buyQueueName,
-  sellQueueName,
+  buyQueueNameFor,
+  sellQueueNameFor,
   EXCHANGE_CONTROL_QUEUE,
 } from "@stockx/shared";
 
@@ -109,7 +109,7 @@ export class ExchangeGateway {
   private resolveQueue(message: EngineRequest): string {
     if (message.type === CREATE_ORDER) {
       const { symbol, side } = message.data;
-      return side === "buy" ? buyQueueName(symbol) : sellQueueName(symbol);
+      return side === "buy" ? buyQueueNameFor(symbol) : sellQueueNameFor(symbol);
     }
     return EXCHANGE_CONTROL_QUEUE;
   }

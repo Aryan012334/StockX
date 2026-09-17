@@ -18,30 +18,10 @@ export const DEPTH           = "DEPTH";
 export const NEW_USER        = "NEW_USER";
 
 // ---------------------------------------------------------------------------
-// Matcher Service → Execution Service (via Redis queue)
+// Matcher Service → Execution Service (via Redis queues)
 // ---------------------------------------------------------------------------
 export const MATCH_CREATED = "MATCH_CREATED";
 export const ORDER_UPDATE  = "ORDER_UPDATE";
 
-// Note: SUBSCRIBE / UNSUBSCRIBE are defined in wsMessages.ts — do not redeclare here.
-
-// ---------------------------------------------------------------------------
-// Redis queue / channel name helpers
-//
-// CortexCookie architecture uses symbol-specific queues so orders for each
-// symbol are processed by one authoritative order book with no cross-symbol
-// interference.
-//
-// Queue layout:
-//   orders:<SYMBOL>:buy   — BUY orders for a symbol  (API Gateway → Matcher)
-//   orders:<SYMBOL>:sell  — SELL orders for a symbol (API Gateway → Matcher)
-//   exchange:control      — Non-order messages: CANCEL, GET_DEPTH, etc.
-//   matches               — MATCH_CREATED events     (Matcher → Execution)
-//   order_updates         — ORDER_UPDATE events      (Matcher → Execution)
-// ---------------------------------------------------------------------------
-export function buyQueueName(symbol: string):  string { return `orders:${symbol}:buy`; }
-export function sellQueueName(symbol: string): string { return `orders:${symbol}:sell`; }
-
-export const EXCHANGE_CONTROL_QUEUE = "exchange:control";
-export const MATCHES_QUEUE          = "matches";
-export const ORDER_UPDATES_QUEUE    = "order_updates";
+// Note: SUBSCRIBE / UNSUBSCRIBE are defined in wsMessages.ts
+// Note: queue name helpers and constants are defined in index.ts

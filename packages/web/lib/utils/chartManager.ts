@@ -60,7 +60,7 @@ export class ChartManager {
           "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       },
       localization: {
-        locale: undefined, // uses browser locale, or set e.g. "en-IN"
+        locale: undefined, // uses browser locale, or set e.g. "en-US"
         timeFormatter: (time: UTCTimestamp) => {
           return new Date(time * 1000).toLocaleString(undefined, {
             hour: "2-digit",

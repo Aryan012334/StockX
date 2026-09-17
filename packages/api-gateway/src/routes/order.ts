@@ -39,9 +39,52 @@ orderRouter.post("/", async (req, res) => {
   const orderId = randomUUID();
 
   // Parse the base stock symbol for DB persistence.
-  // The full market symbol (e.g. "RIL_INR") is used by the Matcher.
-  // The Order table FK references Stock.symbol which is just the base ("RIL").
+  // The full market symbol (e.g. "AAPL_USD") is used by the Matcher.
+  // The Order table FK references Stock.symbol which is just the base ("AAPL").
   const baseSymbol = symbol.split("_")[0] ?? symbol;
+
+  // -------------------------------------------------------------------------
+  // Reserve funds/shares before sending to Matcher (prevents double-spending)
+  // -------------------------------------------------------------------------
+  try {
+    if (side === "buy") {
+      const requiredCash = Number(price) * Number(quantity);
+      const wallet = await prisma.wallet.findUnique({ where: { userId } });
+      if (!wallet) return res.status(400).json({ error: "Wallet not found" });
+      const available = Number(wallet.balance) - Number(wallet.lockedBalance);
+      if (available < requiredCash) {
+        return res.status(400).json({
+          error: `Insufficient funds. Required: $${requiredCash.toFixed(2)}, Available: $${available.toFixed(2)}`,
+        });
+      }
+      await prisma.wallet.update({
+        where: { userId },
+        data:  { lockedBalance: { increment: requiredCash } },
+      });
+    } else {
+      const qty     = Number(quantity);
+      const holding = await prisma.holding.findUnique({
+        where: { userId_symbol: { userId, symbol: baseSymbol } },
+      });
+      const available = holding
+        ? Number(holding.quantity) - Number(holding.lockedQuantity)
+        : 0;
+      if (available < qty) {
+        return res.status(400).json({
+          error: `Insufficient shares. Required: ${qty}, Available: ${available}`,
+        });
+      }
+      if (holding) {
+        await prisma.holding.update({
+          where: { userId_symbol: { userId, symbol: baseSymbol } },
+          data:  { lockedQuantity: { increment: qty } },
+        });
+      }
+    }
+  } catch (reserveErr) {
+    console.error("[Order] Reservation error:", reserveErr);
+    return res.status(500).json({ error: "Failed to reserve funds/shares" });
+  }
 
   // Persist order as OPEN before sending to matcher — ensures durability
   try {

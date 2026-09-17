@@ -1,4 +1,4 @@
-﻿import { prisma }           from "@stockx/execution-service";
+import { prisma }           from "@stockx/execution-service";
 import { getServerSession } from "next-auth";
 import { authOptions }      from "@/lib/auth";
 import { redirect }         from "next/navigation";
@@ -99,7 +99,7 @@ export default async function OrdersPage({
                         </td>
                         <td className="px-6 py-4 capitalize text-muted-foreground">{o.orderType.toLowerCase()}</td>
                         <td className="px-6 py-4 text-right font-mono text-foreground">
-                          ₹{Number(o.price).toFixed(2)}
+                          ${Number(o.price).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-foreground">
                           {Number(o.quantity)}
@@ -113,7 +113,7 @@ export default async function OrdersPage({
                           </Badge>
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
-                          {o.createdAt.toLocaleDateString("en-IN", {
+                          {o.createdAt.toLocaleDateString("en-US", {
                             month: "short", day: "numeric", year: "numeric",
                           })}
                         </td>

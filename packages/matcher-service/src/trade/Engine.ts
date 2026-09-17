@@ -15,12 +15,14 @@ import {
   GET_DEPTH,
   GET_OPEN_ORDERS,
   ADD_USER,
-  SUPPORTED_SYMBOLS,
-  BASE_CURRENCY,
 } from "@stockx/shared";
 import type { EngineRequest } from "@stockx/shared";
 import { Orderbook } from "./Orderbook.js";
 import type { Fill, Order } from "./Orderbook.js";
+
+// Local constant — base currency for the exchange
+// Matches the quoteAsset used in the Stock table ("USD")
+const BASE_CURRENCY = "USD";
 
 // ---------------------------------------------------------------------------
 // In-memory wallet structure
@@ -85,11 +87,19 @@ export class Engine {
   private balances: Map<string, UserBalance> = new Map();
 
   constructor() {
-    // Initialise order books for every supported symbol
-    for (const sym of SUPPORTED_SYMBOLS) {
-      const ticker = `${sym}_${BASE_CURRENCY}`;
-      this.orderbookMap.set(ticker, new Orderbook(ticker));
+    // Order books are created on-demand when the first order arrives for a symbol.
+    // This handles any number of stocks without needing to pre-define them.
+    console.log("[Engine] Initialised — order books created on demand");
+  }
+
+  private getOrCreateOrderbook(symbol: string): Orderbook {
+    let ob = this.orderbookMap.get(symbol);
+    if (!ob) {
+      ob = new Orderbook(symbol);
+      this.orderbookMap.set(symbol, ob);
+      console.log(`[Engine] Created order book for ${symbol}`);
     }
+    return ob;
   }
 
   // -------------------------------------------------------------------------
@@ -193,7 +203,7 @@ export class Engine {
         const { orderId, symbol } = message.data;
         try {
           const { baseAsset, quoteAsset } = parseSymbol(symbol);
-          const orderbook = this.orderbookMap.get(symbol);
+          const orderbook = this.getOrCreateOrderbook(symbol);
           if (!orderbook) throw new Error(`No order book for symbol: ${symbol}`);
 
           // Find order on either side
@@ -353,7 +363,7 @@ export class Engine {
     orderId:   string,
     orderType: "limit" | "market" = "limit",
   ) {
-    const orderbook = this.orderbookMap.get(symbol);
+    const orderbook = this.getOrCreateOrderbook(symbol);
     if (!orderbook) throw new Error(`No order book for symbol: ${symbol}`);
 
     const { baseAsset, quoteAsset } = parseSymbol(symbol);
@@ -650,7 +660,7 @@ export class Engine {
     side:   "buy" | "sell",
     symbol: string,
   ) {
-    const orderbook = this.orderbookMap.get(symbol);
+    const orderbook = this.getOrCreateOrderbook(symbol);
     if (!orderbook) return;
 
     const depth        = orderbook.getDepth();
@@ -683,7 +693,7 @@ export class Engine {
   }
 
   private sendUpdatedDepthAt(price: string, symbol: string) {
-    const orderbook = this.orderbookMap.get(symbol);
+    const orderbook = this.getOrCreateOrderbook(symbol);
     if (!orderbook) return;
 
     const depth    = orderbook.getDepth();

@@ -166,9 +166,9 @@ function BalancesTab({ wallet, loading }: { wallet: Wallet | null; loading: bool
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <div className="rounded-lg bg-muted/20 p-3">
-        <div className="text-xs text-muted-foreground">Cash (INR)</div>
+        <div className="text-xs text-muted-foreground">Cash (USD)</div>
         <div className="text-lg font-semibold text-foreground">
-          ₹{fmt(wallet?.balance)}
+          ${fmt(wallet?.balance)}
         </div>
       </div>
       {holdings.map(([asset, qty]) => (

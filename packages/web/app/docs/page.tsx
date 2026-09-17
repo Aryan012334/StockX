@@ -1,4 +1,4 @@
-import { Separator } from "@/components/ui/separator";
+﻿import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Layers, Zap, Database, Server, Globe, Box } from "lucide-react";
 
@@ -132,7 +132,7 @@ export default function DocsPage() {
           </h2>
 
           <p className="mt-6 leading-8 text-muted-foreground">
-            XCHG Lab is structured as a collection of independent services.
+            StockX is structured as a collection of independent services.
             Orders flow through the REST API into the matching engine, execution
             results are persisted in PostgreSQL and TimescaleDB, while Redis
             distributes events to WebSocket services for real-time market
@@ -354,7 +354,7 @@ export default function DocsPage() {
           </h2>
 
           <p className="mt-6 leading-8 text-muted-foreground">
-            XCHG Lab combines a modern TypeScript stack with real-time
+            StockX combines a modern TypeScript stack with real-time
             messaging, relational storage, and an in-memory matching engine to
             simulate the architecture of a modern electronic exchange.
           </p>
@@ -408,7 +408,7 @@ export default function DocsPage() {
         </h2>
 
         <p className="mt-6 leading-8 text-muted-foreground">
-          XCHG Lab rebuilds the core systems behind a modern electronic exchange
+          StockX rebuilds the core systems behind a modern electronic exchange
           to better understand matching engines, market data distribution,
           real-time communication, and distributed backend architecture.
         </p>

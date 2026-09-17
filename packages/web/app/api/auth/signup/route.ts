@@ -1,5 +1,5 @@
 // POST /api/auth/signup
-// Creates a new user with hashed password, starter wallet (₹50,000 + seed
+// Creates a new user with hashed password, starter wallet ($50,000 + seed
 // stock allocation), and notifies the Matcher Service to pre-load the wallet.
 
 import { prisma }                       from "@stockx/execution-service";
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         data: { name, email, password: hashedPassword },
       });
 
-      // Starter wallet: ₹50,000 cash + seed stock allocation
+      // Starter wallet: $50,000 cash + seed stock allocation
       await tx.wallet.create({
         data: {
           userId:     user.id,
@@ -43,13 +43,13 @@ export async function POST(req: NextRequest) {
           walletId:    user.id,
           type:        "CREDIT",
           category:    "SIGNUP_BONUS",
-          description: "Welcome bonus — ₹50,000 simulated capital",
+          description: "Welcome bonus — $50,000 simulated capital",
           amount:      50000,
           balanceAfter: 50000,
         },
       });
 
-      for (const [ticker, qty] of [["RIL", 50], ["TATA", 50], ["SOL", 50]] as const) {
+      for (const [ticker, qty] of [["AAPL", 50], ["MSFT", 50], ["NVDA", 50]] as const) {
         await tx.transaction.create({
           data: {
             walletId:    user.id,

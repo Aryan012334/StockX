@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { zodResolver }     from "@hookform/resolvers/zod";
 import Link                 from "next/link";
@@ -60,7 +60,7 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4 flex items-center justify-center ">
-            <Image src="/logo.svg" alt="XCHG logo" width={200} height={50} />
+            <Image src="/logo.svg" alt="StockX logo" width={200} height={50} />
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ArrowUpRight, Github, Globe, Linkedin, Mail } from "lucide-react";
 
 const links = [
@@ -45,7 +45,7 @@ export default function ContactCard() {
             </h2>
 
             <p className="mt-6 max-w-md leading-8 text-muted-foreground">
-              XCHG Lab is an exchange infrastructure project built to understand
+              StockX is an exchange infrastructure project built to understand
               the architecture behind modern electronic exchanges. If you'd like
               to discuss distributed systems, matching engines, or have feedback
               on the project, I'd be happy to connect.

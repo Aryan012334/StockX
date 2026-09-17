@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Github, Linkedin, Twitter } from "lucide-react";
 import Image from "next/image";
@@ -11,13 +11,12 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-3">
           {/* Brand */}
           <div className="space-y-3">
-            {/* <h3 className="text-lg font-semibold">XCHG LAB</h3> */}
+            {/* <h3 className="text-lg font-semibold">StockX</h3> */}
             <Link href="/">
-              <Image src="/logo.svg" alt="XCHG logo" width={170} height={60} />
+              <Image src="/logo.svg" alt="StockX logo" width={170} height={60} />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Sharing what I learn, one project at a time. Built with curiosity,
-              code, and caffeine.
+              A simulated stock trading platform. Practice with virtual capital, risk-free.
             </p>
           </div>
 
@@ -71,7 +70,7 @@ export default function Footer() {
             </Link>
           </span>
           <p className="text-xs text-muted-foreground">
-            © XCHG Lab - Orders matched, bugs included.
+            © StockX — Simulated trading. Not financial advice. No real money involved.
           </p>
         </div>
       </div>

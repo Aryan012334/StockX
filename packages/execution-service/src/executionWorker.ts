@@ -163,11 +163,11 @@ async function handleMatchCreated(d: MatchCreatedData) {
     // Lock wallet rows to prevent concurrent settlement races
     // ------------------------------------------------------------------
     const buyerRes = await pgClient.query(
-      `SELECT balance, "assetsHeld" FROM "Wallet" WHERE "userId" = $1 FOR UPDATE`,
+      `SELECT balance, "lockedBalance", "assetsHeld" FROM "Wallet" WHERE "userId" = $1 FOR UPDATE`,
       [buyerId],
     );
     const sellerRes = await pgClient.query(
-      `SELECT balance, "assetsHeld" FROM "Wallet" WHERE "userId" = $1 FOR UPDATE`,
+      `SELECT balance, "lockedBalance", "assetsHeld" FROM "Wallet" WHERE "userId" = $1 FOR UPDATE`,
       [sellerId],
     );
 
@@ -191,26 +191,89 @@ async function handleMatchCreated(d: MatchCreatedData) {
 
     // ------------------------------------------------------------------
     // Calculate new balances
-    // Buyer: pays quoteQuantity INR, receives quantity baseAsset
-    // Seller: receives quoteQuantity INR, delivers quantity baseAsset
+    // Buyer:  pays quoteQuantity cash, receives quantity baseAsset
+    // Seller: receives quoteQuantity cash, delivers quantity baseAsset
+    // Release locked funds: buyer unlocks the spent cash, seller unlocks the shares
     // ------------------------------------------------------------------
-    const newBuyerBalance  = Number(buyerWallet.balance) - quoteQuantity;
-    const newSellerBalance = Number(sellerWallet.balance) + quoteQuantity;
+    const newBuyerBalance         = Number(buyerWallet.balance)        - quoteQuantity;
+    const newBuyerLockedBalance   = Math.max(0, Number(buyerWallet.lockedBalance) - quoteQuantity);
+    const newSellerBalance        = Number(sellerWallet.balance)        + quoteQuantity;
 
     buyerAssets[baseAsset]  = (buyerAssets[baseAsset]  ?? 0) + quantity;
-    sellerAssets[baseAsset] = (sellerAssets[baseAsset] ?? 0) - quantity;
+    sellerAssets[baseAsset] = Math.max(0, (sellerAssets[baseAsset] ?? 0) - quantity);
 
     // ------------------------------------------------------------------
-    // Atomically update both wallets
+    // Update wallets
     // ------------------------------------------------------------------
     await pgClient.query(
-      `UPDATE "Wallet" SET balance=$1, "assetsHeld"=$2, "updatedAt"=NOW() WHERE "userId"=$3`,
-      [newBuyerBalance, JSON.stringify(buyerAssets), buyerId],
+      `UPDATE "Wallet" SET balance=$1, "lockedBalance"=$2, "assetsHeld"=$3, "updatedAt"=NOW() WHERE "userId"=$4`,
+      [newBuyerBalance, newBuyerLockedBalance, JSON.stringify(buyerAssets), buyerId],
     );
     await pgClient.query(
       `UPDATE "Wallet" SET balance=$1, "assetsHeld"=$2, "updatedAt"=NOW() WHERE "userId"=$3`,
       [newSellerBalance, JSON.stringify(sellerAssets), sellerId],
     );
+
+    // ------------------------------------------------------------------
+    // Update Holding table — buyer receives shares (update averageCost)
+    // ------------------------------------------------------------------
+    const buyerHoldingRes = await pgClient.query(
+      `SELECT quantity, "averageCost", "lockedQuantity" FROM "Holding"
+       WHERE "userId"=$1 AND symbol=$2`,
+      [buyerId, baseAsset],
+    );
+
+    if (buyerHoldingRes.rows.length > 0) {
+      const existing     = buyerHoldingRes.rows[0];
+      const existingQty  = Number(existing.quantity);
+      const existingCost = Number(existing.averageCost);
+      // Weighted-average cost basis
+      const newQty    = existingQty + quantity;
+      const newAvgCost = newQty > 0
+        ? (existingQty * existingCost + quantity * price) / newQty
+        : price;
+      await pgClient.query(
+        `UPDATE "Holding" SET quantity=$1, "averageCost"=$2, "updatedAt"=NOW()
+         WHERE "userId"=$3 AND symbol=$4`,
+        [newQty, newAvgCost, buyerId, baseAsset],
+      );
+    } else {
+      await pgClient.query(
+        `INSERT INTO "Holding" (id, "userId", symbol, quantity, "averageCost", "lockedQuantity", "realizedPnl", "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 0, 0, NOW())`,
+        [buyerId, baseAsset, quantity, price],
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Update Holding table — seller delivers shares, realize P&L
+    // ------------------------------------------------------------------
+    const sellerHoldingRes = await pgClient.query(
+      `SELECT quantity, "averageCost", "lockedQuantity", "realizedPnl" FROM "Holding"
+       WHERE "userId"=$1 AND symbol=$2`,
+      [sellerId, baseAsset],
+    );
+
+    if (sellerHoldingRes.rows.length > 0) {
+      const sh         = sellerHoldingRes.rows[0];
+      const shQty      = Number(sh.quantity);
+      const shAvgCost  = Number(sh.averageCost);
+      const shLocked   = Number(sh.lockedQuantity);
+      const shRealized = Number(sh.realizedPnl);
+
+      const newShQty    = Math.max(0, shQty - quantity);
+      const newShLocked = Math.max(0, shLocked - quantity);
+      // Realized P&L for this fill
+      const fillPnl     = (price - shAvgCost) * quantity;
+      const newRealized = shRealized + fillPnl;
+
+      await pgClient.query(
+        `UPDATE "Holding"
+         SET quantity=$1, "lockedQuantity"=$2, "realizedPnl"=$3, "updatedAt"=NOW()
+         WHERE "userId"=$4 AND symbol=$5`,
+        [newShQty, newShLocked, newRealized, sellerId, baseAsset],
+      );
+    }
 
     // ------------------------------------------------------------------
     // Insert public Trade record
@@ -232,7 +295,7 @@ async function handleMatchCreated(d: MatchCreatedData) {
                $3,$4,$5,$6,$7,$8,NOW())`,
       [
         `tx_buy_${matchId}`, buyerId,
-        `Bought ${quantity} ${baseAsset} @ ₹${price}`,
+        `Bought ${quantity} ${baseAsset} @ $${price}`,
         quoteQuantity, newBuyerBalance,
         baseAsset, quantity, price,
       ],
@@ -245,7 +308,7 @@ async function handleMatchCreated(d: MatchCreatedData) {
                $3,$4,$5,$6,$7,$8,NOW())`,
       [
         `tx_sell_${matchId}`, sellerId,
-        `Sold ${quantity} ${baseAsset} @ ₹${price}`,
+        `Sold ${quantity} ${baseAsset} @ $${price}`,
         quoteQuantity, newSellerBalance,
         baseAsset, quantity, price,
       ],
@@ -273,15 +336,55 @@ async function handleMatchCreated(d: MatchCreatedData) {
 
 async function handleOrderUpdate(d: OrderUpdateData) {
   try {
-    await pgClient.query(
-      `UPDATE "Order"
-          SET "filledQty"    = "filledQty" + $1,
-              "remainingQty" = GREATEST("remainingQty" - $1, 0),
-              status         = $2::"OrderStatus",
-              "updatedAt"    = NOW()
-        WHERE id = $3`,
-      [d.executedQty, d.status, d.orderId],
-    );
+    // Update order status and fill quantities
+    if (d.orderId) {
+      await pgClient.query(
+        `UPDATE "Order"
+            SET "filledQty"         = "filledQty" + $1,
+                "remainingQty"      = GREATEST("remainingQty" - $1, 0),
+                "averageFillPrice"  = CASE
+                    WHEN "filledQty" + $1 > 0
+                    THEN ("averageFillPrice" * "filledQty" + $2 * $1) / ("filledQty" + $1)
+                    ELSE "averageFillPrice"
+                  END,
+                status              = $3::"OrderStatus",
+                "updatedAt"         = NOW()
+          WHERE id = $4`,
+        [d.executedQty, d.price ?? 0, d.status, d.orderId],
+      );
+    }
+
+    // On cancellation: release locked funds/shares back to available
+    if (d.status === "CANCELLED" && d.userId && d.remainingQty > 0) {
+      const orderRes = await pgClient.query(
+        `SELECT side, price, "remainingQty" FROM "Order" WHERE id=$1`,
+        [d.orderId],
+      );
+      if (orderRes.rows.length > 0) {
+        const order = orderRes.rows[0];
+        const baseSymbol = d.symbol?.split("_")[0] ?? "";
+
+        if (order.side === "BUY") {
+          // Release locked cash
+          const release = Number(order.price) * Number(order.remainingQty);
+          await pgClient.query(
+            `UPDATE "Wallet"
+             SET "lockedBalance" = GREATEST(0, "lockedBalance" - $1), "updatedAt"=NOW()
+             WHERE "userId"=$2`,
+            [release, d.userId],
+          );
+        } else if (order.side === "SELL" && baseSymbol) {
+          // Release locked shares
+          const qty = Number(order.remainingQty);
+          await pgClient.query(
+            `UPDATE "Holding"
+             SET "lockedQuantity" = GREATEST(0, "lockedQuantity" - $1), "updatedAt"=NOW()
+             WHERE "userId"=$2 AND symbol=$3`,
+            [qty, d.userId, baseSymbol],
+          );
+        }
+      }
+    }
   } catch (err) {
     // Non-critical — the order row may not exist yet (race with creation)
     console.error(`[Execution] ORDER_UPDATE failed for order ${d.orderId}:`, err);

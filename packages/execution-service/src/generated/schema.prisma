@@ -22,9 +22,11 @@ model User {
   image         String?
   password      String?
 
-  accounts Account[]
-  wallet   Wallet?
-  orders   Order[]
+  accounts  Account[]
+  wallet    Wallet?
+  orders    Order[]
+  holdings  Holding[]
+  watchlist Watchlist[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -54,13 +56,17 @@ model Account {
 // ---------------------------------------------------------------------------
 
 model Stock {
-  symbol      String      @id // e.g. "RIL", "TATA", "SOL"
+  symbol      String      @id // e.g. "AAPL", "MSFT"
   companyName String
+  sector      String?
   status      StockStatus @default(ACTIVE)
   baseAsset   String // same as symbol
-  quoteAsset  String      @default("INR")
+  quoteAsset  String      @default("USD")
 
-  orders Order[]
+  orders    Order[]
+  holdings  Holding[]
+  watchlist Watchlist[]
+  quote     MarketQuote?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -72,16 +78,83 @@ enum StockStatus {
 }
 
 // ---------------------------------------------------------------------------
-// WALLET — user funds and holdings
+// MARKET QUOTE CACHE — external price data (Twelve Data / any provider)
+// ---------------------------------------------------------------------------
+
+model MarketQuote {
+  symbol String @id
+  stock  Stock  @relation(fields: [symbol], references: [symbol])
+
+  // Reference market price from external provider
+  price         Decimal @default(0)
+  previousClose Decimal @default(0)
+  open          Decimal @default(0)
+  dayHigh       Decimal @default(0)
+  dayLow        Decimal @default(0)
+  volume        Decimal @default(0)
+  change        Decimal @default(0)
+  changePercent Decimal @default(0)
+
+  // Data quality indicators
+  isDelayed Boolean  @default(true) // false = real-time
+  updatedAt DateTime @default(now())
+
+  @@index([updatedAt])
+}
+
+// ---------------------------------------------------------------------------
+// WALLET — user funds and holdings (cash)
 // ---------------------------------------------------------------------------
 
 model Wallet {
-  userId       String        @id
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance      Decimal       @default(50000) // quote currency (INR) balance
-  assetsHeld   Json          @default("{}") // { "RIL": 10, "TATA": 5 }
-  transactions Transaction[]
-  updatedAt    DateTime?     @updatedAt
+  userId        String        @id
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Decimal       @default(50000) // available cash (USD)
+  lockedBalance Decimal       @default(0) // cash locked in open BUY orders
+  // assetsHeld: JSON snapshot for the Matcher's in-memory warmup.
+  // The canonical holding record is the Holding table.
+  // This JSON is updated by the Execution Service on every fill.
+  assetsHeld    Json          @default("{}") // { "AAPL": 10, "MSFT": 5 }
+  transactions  Transaction[]
+  updatedAt     DateTime?     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// HOLDINGS — per-user stock positions with cost basis
+// ---------------------------------------------------------------------------
+
+model Holding {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol String
+  stock  Stock  @relation(fields: [symbol], references: [symbol])
+
+  quantity       Decimal @default(0) // total shares held
+  lockedQuantity Decimal @default(0) // shares locked in open SELL orders
+  averageCost    Decimal @default(0) // weighted-average cost per share
+  realizedPnl    Decimal @default(0) // cumulative realized P&L from closed positions
+
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// WATCHLIST — per-user stock watchlist
+// ---------------------------------------------------------------------------
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  stock     Stock    @relation(fields: [symbol], references: [symbol])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, symbol])
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
@@ -89,23 +162,20 @@ model Wallet {
 // ---------------------------------------------------------------------------
 
 model Order {
-  id              String      @id @default(uuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  symbol          String
-  stock           Stock       @relation(fields: [symbol], references: [symbol])
-  side            OrderSide
-  orderType       OrderType
-  price           Decimal // limit price (0 for market)
-  quantity        Decimal
-  filledQty       Decimal     @default(0)
-  remainingQty    Decimal
-  status          OrderStatus @default(OPEN)
-  // exchangeOrderId: the ID assigned by the exchange (Matcher Service).
-  // Stored separately from the client-generated id so both identifiers
-  // are visible — matches the CortexCookie Order DB concept of tracking
-  // both the internal order ID and the exchange order ID.
-  exchangeOrderId String?
+  id               String      @id @default(uuid())
+  userId           String
+  user             User        @relation(fields: [userId], references: [id])
+  symbol           String
+  stock            Stock       @relation(fields: [symbol], references: [symbol])
+  side             OrderSide
+  orderType        OrderType
+  price            Decimal // limit price (0 for market)
+  quantity         Decimal
+  filledQty        Decimal     @default(0)
+  remainingQty     Decimal
+  averageFillPrice Decimal     @default(0) // weighted avg of fills
+  status           OrderStatus @default(OPEN)
+  exchangeOrderId  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -136,10 +206,8 @@ enum OrderStatus {
 // MATCH EXECUTION SERVICE — settlement records + idempotency
 // ---------------------------------------------------------------------------
 
-// One row per match event — also acts as the idempotency key.
-// A unique constraint on matchId prevents duplicate settlement.
 model MatchExecution {
-  matchId       String  @id // tradeId from the matcher — unique per match
+  matchId       String  @id
   buyOrderId    String
   sellOrderId   String
   symbol        String
@@ -165,7 +233,7 @@ enum SettlementStatus {
 
 model Trade {
   id            String   @id @default(uuid())
-  symbol        String // e.g. "RIL_INR"
+  symbol        String // e.g. "AAPL_USD"
   price         Decimal
   quantity      Decimal
   quoteQuantity Decimal
@@ -176,7 +244,7 @@ model Trade {
 }
 
 // ---------------------------------------------------------------------------
-// WALLET TRANSACTIONS — audit log of all financial movements
+// WALLET TRANSACTIONS — full audit log
 // ---------------------------------------------------------------------------
 
 model Transaction {
@@ -203,4 +271,8 @@ enum TransactionCategory {
   SIGNUP_BONUS
   ORDER_BUY
   ORDER_SELL
+  DEPOSIT
+  WITHDRAWAL
+  ORDER_BUY_REFUND // released lock on cancel
+  ORDER_SELL_REFUND // released shares on cancel
 }

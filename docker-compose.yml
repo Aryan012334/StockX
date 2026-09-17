@@ -63,6 +63,7 @@ services:
     env_file: .env
     environment:
       PORT: 3001
+      TWELVE_DATA_API_KEY: ${TWELVE_DATA_API_KEY:-}
     ports:
       - "127.0.0.1:13001:3001"
     restart: unless-stopped
