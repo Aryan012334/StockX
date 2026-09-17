@@ -126,6 +126,9 @@ services:
     env_file: .env
     environment:
       PORT: 3000
+      # Internal Docker network URL for server-side API calls (e.g. pingApiNewUser)
+      # This is different from NEXT_PUBLIC_REST_API_URL which is the browser-facing URL.
+      INTERNAL_API_URL: http://api-gateway:3001/api/v1
     ports:
       - "127.0.0.1:13000:3000"
     restart: unless-stopped

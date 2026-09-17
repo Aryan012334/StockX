@@ -29,7 +29,6 @@ import axios from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters long"),
@@ -51,23 +50,25 @@ export default function SignUp() {
     resolver: zodResolver(formSchema),
   });
 
-  const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND,
-  });
-
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const res = await api.post("/auth/signup", data);
+      // POST to the Next.js API route directly (relative URL — no NEXT_PUBLIC_BACKEND needed)
+      const res = await axios.post("/api/auth/signup", data);
       if (res.status === 201) {
-        toast.success("Verification email sent", {
-          description:
-            "Please check your inbox / spam and verify your account.",
+        // Auto sign-in after successful registration
+        const result = await signIn("credentials", {
+          email: data.email,
+          password: data.password,
+          redirect: false,
         });
 
-        setTimeout(() => {
-          router.push("/login?verify=sent");
-        }, 2000);
+        if (result?.error) {
+          // Registration worked but auto-login failed — send to login page
+          router.push("/login");
+        } else {
+          router.push("/markets");
+        }
       }
     } catch (error: any) {
       if (error.response) {
@@ -166,19 +167,7 @@ export default function SignUp() {
             <div className="py-2 absolute inset-0 flex items-center">
               <Separator />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
-            </div>
           </div>
-
-          <Button
-            variant="outline"
-            className="w-full"
-            type="button"
-            onClick={() => signIn("github", { callbackUrl: "/" })}>
-            <GitHubLogo />
-            Continue with Github
-          </Button>
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
@@ -215,24 +204,4 @@ export default function SignUp() {
   );
 }
 
-const GitHubLogo = () => (
-  <svg
-    className="mr-2 h-4 w-4"
-    viewBox="0 0 16 16"
-    fill="currentColor"
-    xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38
-      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-      -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87
-      2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
-      0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21
-      2.2.82a7.66 7.66 0 012.01-.27c.68 0 1.36.09 2.01.27
-      1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08
-      2.12.51.56.82 1.27.82 2.15 0 3.07-1.87
-      3.75-3.65 3.95.29.25.54.73.54 1.48
-      0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
-      8.01 0 0016 8c0-4.42-3.58-8-8-8z"
-    />
-  </svg>
-);
+const GitHubLogo = () => null;

@@ -39,5 +39,11 @@ COPY --from=builder /app/packages/shared                  /app/packages/shared
 COPY --from=builder /app/packages/execution-service       /app/packages/execution-service
 COPY --from=builder /app/packages/web                     /app/packages/web
 
+# standalone output requires static assets to be copied alongside server.js
+# In a workspace layout, Next.js nests the output under the workspace package name
+COPY --from=builder /app/packages/web/.next/static        /app/packages/web/.next/standalone/web/.next/static
+COPY --from=builder /app/packages/web/public              /app/packages/web/.next/standalone/web/public
+
 EXPOSE 3000
-CMD ["npm", "start"]
+# standalone server path for workspace layout: standalone/<package-name>/server.js
+CMD ["node", ".next/standalone/web/server.js"]
