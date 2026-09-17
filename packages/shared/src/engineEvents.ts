@@ -23,11 +23,7 @@ export const NEW_USER        = "NEW_USER";
 export const MATCH_CREATED = "MATCH_CREATED";
 export const ORDER_UPDATE  = "ORDER_UPDATE";
 
-// ---------------------------------------------------------------------------
-// WebSocket stream event types (Matcher → Realtime Service → Browser)
-// ---------------------------------------------------------------------------
-export const SUBSCRIBE   = "SUBSCRIBE";
-export const UNSUBSCRIBE = "UNSUBSCRIBE";
+// Note: SUBSCRIBE / UNSUBSCRIBE are defined in wsMessages.ts — do not redeclare here.
 
 // ---------------------------------------------------------------------------
 // Redis queue / channel name helpers

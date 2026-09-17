@@ -826,13 +826,13 @@ describe("Orderbook — Open Orders", () => {
       })
     );
 
-    const aliceOrders = book.getOpenOrder("alice");
+    const aliceOrders = book.getOpenOrders("alice");
     expect(aliceOrders).toHaveLength(2);
 
-    const bobOrders = book.getOpenOrder("bob");
+    const bobOrders = book.getOpenOrders("bob");
     expect(bobOrders).toHaveLength(1);
 
-    const unknownOrders = book.getOpenOrder("charlie");
+    const unknownOrders = book.getOpenOrders("charlie");
     expect(unknownOrders).toHaveLength(0);
   });
 });
