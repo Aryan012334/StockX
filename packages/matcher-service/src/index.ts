@@ -3,32 +3,27 @@
 //
 // CortexCookie queue layout (symbol-specific routing):
 //
-//   orders:RIL_INR:buy   — BUY  orders for RIL
-//   orders:RIL_INR:sell  — SELL orders for RIL
-//   orders:TATA_INR:buy  — BUY  orders for TATA
-//   ... (one pair per supported symbol)
-//   exchange:control     — CANCEL, GET_DEPTH, ADD_USER, ON_RAMP
+//   orders:<SYMBOL>_USD:buy   — BUY  orders for a symbol
+//   orders:<SYMBOL>_USD:sell  — SELL orders for a symbol
+//   exchange:control          — CANCEL, GET_DEPTH, ADD_USER, ON_RAMP
 //
-// The Matcher pops from ALL queues simultaneously using BRPOP with a list.
-// BRPOP is fair-weighted: it processes whichever queue has a message first.
-// All orders for the same symbol still route to the same in-memory order
-// book because the Engine is a single process — this satisfies the
-// CortexCookie requirement of deterministic per-symbol processing.
+// At startup, all active stock symbols are loaded from the DB to build
+// the full queue list. New symbols added while the service is running
+// require a restart to be picked up (acceptable for this implementation).
 //
-// Outbound:
-//   matches        — MATCH_CREATED events → Execution Service
-//   order_updates  — ORDER_UPDATE events  → Execution Service
-//   trade@SYMBOL   — pub/sub              → Realtime Service
-//   depth@SYMBOL   — pub/sub              → Realtime Service
+// BRPOP accepts multiple keys and returns from whichever fires first,
+// giving fair, ordered processing across all symbol queues.
 // ---------------------------------------------------------------------------
 
 import { config } from "dotenv";
 config({ quiet: true });
 
-import { RedisManager } from "./redisClient.js";
-import { Engine }       from "./trade/Engine.js";
+import { RedisManager }          from "./redisClient.js";
+import { Engine }                from "./trade/Engine.js";
+import { prisma }                from "@stockx/execution-service";
 import {
-  allSymbolQueues,
+  buyQueueNameFor,
+  sellQueueNameFor,
   EXCHANGE_CONTROL_QUEUE,
 } from "@stockx/shared";
 
@@ -40,16 +35,38 @@ async function main() {
 
   const redis = RedisManager.getInstance();
 
-  // Build the complete list of queues to listen on:
-  //   one BUY + one SELL queue per symbol, plus the control queue
-  const symbolQueues  = allSymbolQueues();          // ["orders:RIL_INR:buy", "orders:RIL_INR:sell", ...]
-  const listenQueues  = [...symbolQueues, EXCHANGE_CONTROL_QUEUE];
+  // -------------------------------------------------------------------------
+  // Build the complete queue list from the Stock catalog.
+  //
+  // Every active stock gets a dedicated BUY and SELL queue.
+  // This ensures symbol-specific routing (CortexCookie requirement):
+  //   all AAPL orders → orders:AAPL_USD:buy / orders:AAPL_USD:sell
+  //   all MSFT orders → orders:MSFT_USD:buy / orders:MSFT_USD:sell
+  //
+  // The control queue handles everything else (CANCEL, GET_DEPTH, etc.)
+  // -------------------------------------------------------------------------
+  let symbolQueues: string[] = [];
+  try {
+    const stocks = await prisma.stock.findMany({
+      where:  { status: "ACTIVE" },
+      select: { symbol: true, quoteAsset: true },
+    });
 
-  console.log("[Matcher] Ready — listening on queues:", listenQueues.join(", "));
+    symbolQueues = stocks.flatMap((s) => {
+      const ticker = `${s.symbol}_${s.quoteAsset}`;
+      return [buyQueueNameFor(ticker), sellQueueNameFor(ticker)];
+    });
+
+    console.log(`[Matcher] Registered ${stocks.length} stocks → ${symbolQueues.length} symbol queues`);
+  } catch (err) {
+    console.warn("[Matcher] Could not load stock list from DB — only control queue active:", err);
+  }
+
+  const listenQueues = [...symbolQueues, EXCHANGE_CONTROL_QUEUE];
+
+  console.log(`[Matcher] Ready — listening on ${listenQueues.length} queues (${symbolQueues.length} symbol + 1 control)`);
 
   while (true) {
-    // BRPOP accepts multiple keys and returns from whichever fires first.
-    // This gives us fair, ordered processing across all symbol queues.
     const response = await redis.blockingPop(listenQueues, 0);
     if (response) {
       try {
