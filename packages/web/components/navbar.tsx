@@ -8,8 +8,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProfileMenu from "@/components/profileMenu";
 import { useSession } from "next-auth/react";
-import { getTickers } from "@/lib/utils/apiClient";
-import type { Ticker } from "@stockx/shared";
+import { getMarketQuotes } from "@/lib/utils/apiClient";
+import type { MarketQuote } from "@stockx/shared";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -17,7 +17,7 @@ export default function Navbar() {
 
   const user = session?.user;
 
-  const [tickers, setTickers] = useState<Ticker[]>([]);
+  const [tickers, setTickers] = useState<MarketQuote[]>([]);
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -25,7 +25,7 @@ export default function Navbar() {
   const ensureTickersLoaded = () => {
     if (hasFetched) return;
     setHasFetched(true);
-    getTickers()
+    getMarketQuotes()
       .then(setTickers)
       .catch(() => setTickers([]));
   };
@@ -53,7 +53,9 @@ export default function Navbar() {
   function goToMarket(symbol: string) {
     setQuery("");
     setIsOpen(false);
-    router.push(`/trade/${symbol}`);
+    // Append _USD if not already a market symbol
+    const marketSymbol = symbol.includes("_") ? symbol : `${symbol}_USD`;
+    router.push(`/trade/${marketSymbol}`);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -112,8 +114,18 @@ export default function Navbar() {
                       <button
                         key={t.symbol}
                         onClick={() => goToMarket(t.symbol)}
-                        className="flex w-full items-center px-4 py-2.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted/30">
-                        {base}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/30">
+                        <div>
+                          <span className="font-medium text-foreground">{base ?? t.symbol}</span>
+                          {t.companyName && (
+                            <span className="ml-2 text-xs text-muted-foreground">{t.companyName}</span>
+                          )}
+                        </div>
+                        {t.price !== null && (
+                          <span className="font-mono text-xs text-muted-foreground">
+                            ${Number(t.price).toFixed(2)}
+                          </span>
+                        )}
                       </button>
                     );
                   })

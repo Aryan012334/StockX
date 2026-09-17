@@ -28,7 +28,7 @@ import { prisma }       from "@stockx/execution-service";
 export const priceRouter = Router();
 
 // ---------------------------------------------------------------------------
-// GET /api/v1/price/tickers  [?symbol=RIL_INR]
+// GET /api/v1/price/tickers  [?symbol=AAPL_USD]
 // Returns: { symbol, lastPrice, firstPrice, high, low, volume,
 //            priceChange, priceChangePercent }
 // Computes everything from the Trade table — no materialised views.

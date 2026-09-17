@@ -20,8 +20,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTickers, getPriceHistory } from "@/lib/utils/apiClient";
-import type { Ticker } from "@stockx/shared";
+import { getMarketQuotes, getPriceHistory } from "@/lib/utils/apiClient";
+import type { MarketQuote } from "@stockx/shared";
 import { Sparkline } from "@/components/markets/Sparkline";
 
 // Static content
@@ -104,31 +104,19 @@ function formatVolume(value: string | number | undefined): string {
   return volumeFormatter.format(num);
 }
 
-// Normalizes whatever shape the tickers endpoint returns into Ticker[].
-// Ideally getTickers() itself is typed to return Ticker[] and this goes away.
-function extractTickers(response: unknown): Ticker[] | null {
-  if (Array.isArray(response)) return response as Ticker[];
-  if (response && typeof response === "object") {
-    const obj = response as Record<string, unknown>;
-    if (Array.isArray(obj.data)) return obj.data as Ticker[];
-    if (Array.isArray(obj.tickers)) return obj.tickers as Ticker[];
-  }
-  return null;
-}
-
 // Ticker tape
 
 type TapeItem = {
   symbol?: string;
-  lastPrice?: string | number;
-  priceChangePercent?: string;
+  price?: number | null;
+  changePercent?: number | null;
 };
 
 function TickerTape({
   tickers,
   loading,
 }: {
-  tickers: Ticker[];
+  tickers: MarketQuote[];
   loading: boolean;
 }) {
   const placeholder: TapeItem[] = Array.from({ length: 6 }).map(() => ({
@@ -145,7 +133,7 @@ function TickerTape({
       aria-hidden="true">
       <div className="ticker-track flex w-max items-center gap-8 whitespace-nowrap py-2">
         {loop.map((t, i) => {
-          const change = parseFloat(t.priceChangePercent || "0");
+          const change = parseFloat(String(t.changePercent ?? 0));
           const positive = change >= 0;
           return (
             <span
@@ -154,10 +142,10 @@ function TickerTape({
               <span className="font-medium text-zinc-300">
                 {t.symbol?.replace("_", "/")}
               </span>
-              <span>${formatPrice(t.lastPrice)}</span>
+              <span>${formatPrice(t.price ?? undefined)}</span>
               <span className={positive ? "text-emerald-400" : "text-red-400"}>
                 {positive ? "+" : ""}
-                {t.priceChangePercent}%
+                {(t.changePercent ?? 0).toFixed(2)}%
               </span>
             </span>
           );
@@ -194,10 +182,10 @@ function MarketCard({
 }: {
   symbol: string;
   name: string;
-  live: Ticker | null;
+  live: MarketQuote | null;
 }) {
   const [closes, setCloses] = useState<number[]>([]);
-  const change = live ? parseFloat(live.priceChangePercent || "0") : 0;
+  const change = live ? Number(live.changePercent ?? 0) : 0;
   const positive = change >= 0;
 
   useEffect(() => {
@@ -239,7 +227,7 @@ function MarketCard({
             ) : (
               <ArrowDownRight className="size-3" />
             )}
-            {live.priceChangePercent}%
+            {(live.changePercent ?? 0).toFixed(2)}%
           </div>
         ) : (
           <div className="h-4 w-10 animate-pulse rounded bg-[#23262B]" />
@@ -249,7 +237,7 @@ function MarketCard({
       <div className="mt-5 flex items-end justify-between gap-3">
         <div className="font-mono text-xl font-semibold text-white">
           {live ? (
-            `$${formatPrice(live.lastPrice)}`
+            `$${formatPrice(live.price ?? undefined)}`
           ) : (
             <span className="inline-block h-6 w-20 animate-pulse rounded bg-[#23262B]" />
           )}
@@ -260,7 +248,7 @@ function MarketCard({
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 font-mono text-[11px] text-zinc-600">
-        <span>Vol {live ? formatVolume(live.volume) : "—"}</span>
+        <span>Vol {live ? formatVolume(live.volume ?? undefined) : "—"}</span>
         <span className="text-zinc-500 group-hover:text-[var(--brand-cyan)]">
           Trade →
         </span>
@@ -271,17 +259,17 @@ function MarketCard({
 
 // Page
 export default function LandingPage() {
-  const [liveTickers, setLiveTickers] = useState<Ticker[]>([]);
+  const [liveTickers, setLiveTickers] = useState<MarketQuote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const consecutiveFailuresRef = useRef(0);
 
   const fetchTickers = useCallback(async (signal: AbortSignal) => {
     try {
-      const response = await getTickers();
+      const response = await getMarketQuotes();
       if (signal.aborted) return;
 
-      const extracted = extractTickers(response);
+      const extracted = Array.isArray(response) ? response : null;
       if (extracted) {
         setLiveTickers(extracted);
         setHasError(false);

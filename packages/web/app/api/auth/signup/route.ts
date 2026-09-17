@@ -1,11 +1,20 @@
 // POST /api/auth/signup
-// Creates a new user with hashed password, starter wallet ($50,000 + seed
-// stock allocation), and notifies the Matcher Service to pre-load the wallet.
+// Creates a new user with hashed password, $50,000 starter wallet,
+// seed stock allocation (10 shares each of AAPL, MSFT, NVDA),
+// and notifies the Matcher Service to pre-load the wallet.
 
-import { prisma }                       from "@stockx/execution-service";
-import { NextResponse, type NextRequest } from "next/server";
-import bcrypt                            from "bcrypt";
-import { pingApiNewUser }                from "@/lib/utils/pingApiNewUser";
+import { prisma }                        from "@stockx/execution-service";
+import { NextResponse, type NextRequest }  from "next/server";
+import bcrypt                             from "bcrypt";
+import { pingApiNewUser }                 from "@/lib/utils/pingApiNewUser";
+
+const SEED_STOCKS = [
+  { ticker: "AAPL", qty: 10 },
+  { ticker: "MSFT", qty: 10 },
+  { ticker: "NVDA", qty: 10 },
+] as const;
+
+const STARTER_CASH = 50_000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,34 +31,52 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user + wallet + starter transactions in one atomic transaction
+    // Build the assetsHeld JSON that the Matcher uses for in-memory warmup
+    const assetsHeld = SEED_STOCKS.reduce<Record<string, number>>(
+      (acc, s) => { acc[s.ticker] = s.qty; return acc; },
+      {},
+    );
+
     const newUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: { name, email, password: hashedPassword },
       });
 
-      // Starter wallet: $50,000 cash + seed stock allocation
+      // Wallet — cash + assetsHeld snapshot (for Matcher warmup)
       await tx.wallet.create({
         data: {
           userId:     user.id,
-          balance:    50000,
-          assetsHeld: { RIL: 50, TATA: 50, SOL: 50 },
+          balance:    STARTER_CASH,
+          assetsHeld,
         },
       });
 
-      // Audit records
+      // Holding rows — canonical position records (for P&L, portfolio)
+      for (const { ticker, qty } of SEED_STOCKS) {
+        await tx.holding.create({
+          data: {
+            userId:      user.id,
+            symbol:      ticker,
+            quantity:    qty,
+            averageCost: 0,   // seeded at no cost (gift allocation)
+            realizedPnl: 0,
+          },
+        });
+      }
+
+      // Audit log
       await tx.transaction.create({
         data: {
           walletId:    user.id,
           type:        "CREDIT",
           category:    "SIGNUP_BONUS",
-          description: "Welcome bonus — $50,000 simulated capital",
-          amount:      50000,
-          balanceAfter: 50000,
+          description: `Welcome bonus — $${STARTER_CASH.toLocaleString()} simulated capital`,
+          amount:      STARTER_CASH,
+          balanceAfter: STARTER_CASH,
         },
       });
 
-      for (const [ticker, qty] of [["AAPL", 50], ["MSFT", 50], ["NVDA", 50]] as const) {
+      for (const { ticker, qty } of SEED_STOCKS) {
         await tx.transaction.create({
           data: {
             walletId:    user.id,
@@ -57,7 +84,7 @@ export async function POST(req: NextRequest) {
             category:    "SIGNUP_BONUS",
             description: `Seed allocation — ${qty} ${ticker} shares`,
             amount:      0,
-            balanceAfter: 50000,
+            balanceAfter: STARTER_CASH,
             ticker,
             quantity:    qty,
           },
@@ -68,7 +95,6 @@ export async function POST(req: NextRequest) {
     });
 
     // Pre-load wallet into the Matcher Service in-memory balance map
-    // (non-blocking — failure is acceptable, will load on next restart)
     pingApiNewUser(newUser.id).catch((err) =>
       console.error("[Signup] Failed to ping Matcher Service:", err),
     );
