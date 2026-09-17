@@ -3,6 +3,7 @@ WORKDIR /app
 COPY packages/package*.json ./packages/
 COPY packages ./packages
 WORKDIR /app/packages
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npm ci
 RUN npm run db:generate --workspace=execution-service || true
 RUN npm run build --workspace=shared            || true
@@ -14,6 +15,7 @@ WORKDIR /app
 COPY packages/package*.json ./packages/
 COPY packages ./packages
 WORKDIR /app/packages
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npm ci --omit=dev
 RUN npm run db:generate --workspace=execution-service || true
 

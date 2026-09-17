@@ -38,13 +38,18 @@ orderRouter.post("/", async (req, res) => {
   const { userId, symbol, price, quantity, side, orderType } = parsed.data;
   const orderId = randomUUID();
 
+  // Parse the base stock symbol for DB persistence.
+  // The full market symbol (e.g. "RIL_INR") is used by the Matcher.
+  // The Order table FK references Stock.symbol which is just the base ("RIL").
+  const baseSymbol = symbol.split("_")[0] ?? symbol;
+
   // Persist order as OPEN before sending to matcher — ensures durability
   try {
     await prisma.order.create({
       data: {
         id:           orderId,
         userId,
-        symbol,
+        symbol:       baseSymbol,
         side:         side.toUpperCase() as "BUY" | "SELL",
         orderType:    orderType.toUpperCase() as "LIMIT" | "MARKET",
         price:        Number(price),

@@ -3,6 +3,10 @@ WORKDIR /app
 COPY packages/package*.json ./packages/
 COPY packages ./packages
 WORKDIR /app/packages
+
+# prisma generate doesn't connect to DB — dummy URL is fine at build time
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+
 RUN npm ci
 RUN npm run db:generate --workspace=execution-service || true
 RUN npm run build --workspace=shared            || true
@@ -13,6 +17,7 @@ WORKDIR /app
 COPY packages/package*.json ./packages/
 COPY packages ./packages
 WORKDIR /app/packages
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npm ci --omit=dev
 RUN npm run db:generate --workspace=execution-service || true
 
@@ -24,5 +29,7 @@ COPY --from=deps    /app/packages/node_modules          /app/packages/node_modul
 COPY --from=builder /app/packages/shared                /app/packages/shared
 COPY --from=builder /app/packages/execution-service     /app/packages/execution-service
 
-# Run migrations on startup then launch the execution worker
+# At runtime: DATABASE_URL is injected from .env via docker-compose
+# 1. Apply any pending migrations (idempotent — safe to run every startup)
+# 2. Start the execution worker (two parallel loops: matches + order_updates)
 CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/executionWorker.js"]

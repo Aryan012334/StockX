@@ -64,7 +64,7 @@ services:
     environment:
       PORT: 3001
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:13001:3001"
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -107,7 +107,7 @@ services:
     environment:
       WS_PORT: 3002
     ports:
-      - "127.0.0.1:3002:3002"
+      - "127.0.0.1:13002:3002"
     restart: unless-stopped
     depends_on:
       redis: { condition: service_healthy }
@@ -127,7 +127,7 @@ services:
     environment:
       PORT: 3000
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:13000:3000"
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
