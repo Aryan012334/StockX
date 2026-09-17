@@ -89,3 +89,6 @@ temp/
 snapshot.json
 
 todos.txt
+
+# Vitest result artifacts
+.vite/

@@ -24,31 +24,84 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type Account = $Result.DefaultSelection<Prisma.$AccountPayload>
 /**
+ * Model Stock
+ * 
+ */
+export type Stock = $Result.DefaultSelection<Prisma.$StockPayload>
+/**
  * Model Wallet
  * 
  */
 export type Wallet = $Result.DefaultSelection<Prisma.$WalletPayload>
 /**
- * Model Token
+ * Model Order
  * 
  */
-export type Token = $Result.DefaultSelection<Prisma.$TokenPayload>
+export type Order = $Result.DefaultSelection<Prisma.$OrderPayload>
+/**
+ * Model MatchExecution
+ * 
+ */
+export type MatchExecution = $Result.DefaultSelection<Prisma.$MatchExecutionPayload>
+/**
+ * Model Trade
+ * 
+ */
+export type Trade = $Result.DefaultSelection<Prisma.$TradePayload>
 /**
  * Model Transaction
  * 
  */
 export type Transaction = $Result.DefaultSelection<Prisma.$TransactionPayload>
-/**
- * Model Trades
- * 
- */
-export type Trades = $Result.DefaultSelection<Prisma.$TradesPayload>
 
 /**
  * Enums
  */
 export namespace $Enums {
-  export const TransactionType: {
+  export const StockStatus: {
+  ACTIVE: 'ACTIVE',
+  DELISTED: 'DELISTED'
+};
+
+export type StockStatus = (typeof StockStatus)[keyof typeof StockStatus]
+
+
+export const OrderSide: {
+  BUY: 'BUY',
+  SELL: 'SELL'
+};
+
+export type OrderSide = (typeof OrderSide)[keyof typeof OrderSide]
+
+
+export const OrderType: {
+  LIMIT: 'LIMIT',
+  MARKET: 'MARKET'
+};
+
+export type OrderType = (typeof OrderType)[keyof typeof OrderType]
+
+
+export const OrderStatus: {
+  OPEN: 'OPEN',
+  PARTIALLY_FILLED: 'PARTIALLY_FILLED',
+  FILLED: 'FILLED',
+  CANCELLED: 'CANCELLED',
+  EXPIRED: 'EXPIRED'
+};
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
+
+
+export const SettlementStatus: {
+  SETTLED: 'SETTLED',
+  FAILED: 'FAILED'
+};
+
+export type SettlementStatus = (typeof SettlementStatus)[keyof typeof SettlementStatus]
+
+
+export const TransactionType: {
   CREDIT: 'CREDIT',
   DEBIT: 'DEBIT'
 };
@@ -65,6 +118,26 @@ export const TransactionCategory: {
 export type TransactionCategory = (typeof TransactionCategory)[keyof typeof TransactionCategory]
 
 }
+
+export type StockStatus = $Enums.StockStatus
+
+export const StockStatus: typeof $Enums.StockStatus
+
+export type OrderSide = $Enums.OrderSide
+
+export const OrderSide: typeof $Enums.OrderSide
+
+export type OrderType = $Enums.OrderType
+
+export const OrderType: typeof $Enums.OrderType
+
+export type OrderStatus = $Enums.OrderStatus
+
+export const OrderStatus: typeof $Enums.OrderStatus
+
+export type SettlementStatus = $Enums.SettlementStatus
+
+export const SettlementStatus: typeof $Enums.SettlementStatus
 
 export type TransactionType = $Enums.TransactionType
 
@@ -114,7 +187,7 @@ export class PrismaClient<
    * Read more in our [docs](https://pris.ly/d/client).
    */
 
-  constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
+  constructor(optionsArg ?: Prisma.PrismaClientConstructorArgs<ClientOptions>);
   $on<V extends U>(eventType: V, callback: (event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent) => void): PrismaClient;
 
   /**
@@ -216,6 +289,16 @@ export class PrismaClient<
   get account(): Prisma.AccountDelegate<ExtArgs, ClientOptions>;
 
   /**
+   * `prisma.stock`: Exposes CRUD operations for the **Stock** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Stocks
+    * const stocks = await prisma.stock.findMany()
+    * ```
+    */
+  get stock(): Prisma.StockDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.wallet`: Exposes CRUD operations for the **Wallet** model.
     * Example usage:
     * ```ts
@@ -226,14 +309,34 @@ export class PrismaClient<
   get wallet(): Prisma.WalletDelegate<ExtArgs, ClientOptions>;
 
   /**
-   * `prisma.token`: Exposes CRUD operations for the **Token** model.
+   * `prisma.order`: Exposes CRUD operations for the **Order** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more Tokens
-    * const tokens = await prisma.token.findMany()
+    * // Fetch zero or more Orders
+    * const orders = await prisma.order.findMany()
     * ```
     */
-  get token(): Prisma.TokenDelegate<ExtArgs, ClientOptions>;
+  get order(): Prisma.OrderDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.matchExecution`: Exposes CRUD operations for the **MatchExecution** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more MatchExecutions
+    * const matchExecutions = await prisma.matchExecution.findMany()
+    * ```
+    */
+  get matchExecution(): Prisma.MatchExecutionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.trade`: Exposes CRUD operations for the **Trade** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Trades
+    * const trades = await prisma.trade.findMany()
+    * ```
+    */
+  get trade(): Prisma.TradeDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.transaction`: Exposes CRUD operations for the **Transaction** model.
@@ -244,16 +347,6 @@ export class PrismaClient<
     * ```
     */
   get transaction(): Prisma.TransactionDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.trades`: Exposes CRUD operations for the **Trades** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Trades
-    * const trades = await prisma.trades.findMany()
-    * ```
-    */
-  get trades(): Prisma.TradesDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -304,8 +397,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 7.8.0
-   * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
+   * Prisma Client JS version: 7.10.0
+   * Query Engine version: 0edf323efd1d98336f3f0a68684b56f689b900d3
    */
   export type PrismaVersion = {
     client: string
@@ -440,6 +533,19 @@ export namespace Prisma {
   };
 
   /**
+   * Resolved type of the argument passed to the `PrismaClient` constructor.
+   *
+   * When called without a narrower options type (the common case), this resolves
+   * to `PrismaClientOptions` directly, which produces a clear TypeScript error
+   * message (`not assignable to parameter of type 'PrismaClientOptions'`) when
+   * the argument is missing or incomplete. When the user supplies a narrower
+   * options type (e.g. via a literal), it falls back to `Subset` to keep
+   * filtering out unknown properties.
+   */
+  export type PrismaClientConstructorArgs<Options extends PrismaClientOptions> =
+    [PrismaClientOptions] extends [Options] ? PrismaClientOptions : Subset<Options, PrismaClientOptions>;
+
+  /**
    * SelectSubset
    * @desc From `T` pick properties that exist in `U`. Simple version of Intersection.
    * Additionally, it validates, if both select and include are present. If the case, it errors.
@@ -471,7 +577,7 @@ export namespace Prisma {
   type XOR<T, U> =
     T extends object ?
     U extends object ?
-      (Without<T, U> & U) | (Without<U, T> & T)
+      ((Without<T, U> & U) | (Without<U, T> & T)) & object
     : U : T
 
 
@@ -690,10 +796,12 @@ export namespace Prisma {
   export const ModelName: {
     User: 'User',
     Account: 'Account',
+    Stock: 'Stock',
     Wallet: 'Wallet',
-    Token: 'Token',
-    Transaction: 'Transaction',
-    Trades: 'Trades'
+    Order: 'Order',
+    MatchExecution: 'MatchExecution',
+    Trade: 'Trade',
+    Transaction: 'Transaction'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -709,7 +817,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "account" | "wallet" | "token" | "transaction" | "trades"
+      modelProps: "user" | "account" | "stock" | "wallet" | "order" | "matchExecution" | "trade" | "transaction"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -861,6 +969,80 @@ export namespace Prisma {
           }
         }
       }
+      Stock: {
+        payload: Prisma.$StockPayload<ExtArgs>
+        fields: Prisma.StockFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.StockFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.StockFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          findFirst: {
+            args: Prisma.StockFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.StockFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          findMany: {
+            args: Prisma.StockFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>[]
+          }
+          create: {
+            args: Prisma.StockCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          createMany: {
+            args: Prisma.StockCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.StockCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>[]
+          }
+          delete: {
+            args: Prisma.StockDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          update: {
+            args: Prisma.StockUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          deleteMany: {
+            args: Prisma.StockDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.StockUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.StockUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>[]
+          }
+          upsert: {
+            args: Prisma.StockUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockPayload>
+          }
+          aggregate: {
+            args: Prisma.StockAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateStock>
+          }
+          groupBy: {
+            args: Prisma.StockGroupByArgs<ExtArgs>
+            result: $Utils.Optional<StockGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.StockCountArgs<ExtArgs>
+            result: $Utils.Optional<StockCountAggregateOutputType> | number
+          }
+        }
+      }
       Wallet: {
         payload: Prisma.$WalletPayload<ExtArgs>
         fields: Prisma.WalletFieldRefs
@@ -935,77 +1117,225 @@ export namespace Prisma {
           }
         }
       }
-      Token: {
-        payload: Prisma.$TokenPayload<ExtArgs>
-        fields: Prisma.TokenFieldRefs
+      Order: {
+        payload: Prisma.$OrderPayload<ExtArgs>
+        fields: Prisma.OrderFieldRefs
         operations: {
           findUnique: {
-            args: Prisma.TokenFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload> | null
+            args: Prisma.OrderFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload> | null
           }
           findUniqueOrThrow: {
-            args: Prisma.TokenFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           findFirst: {
-            args: Prisma.TokenFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload> | null
+            args: Prisma.OrderFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload> | null
           }
           findFirstOrThrow: {
-            args: Prisma.TokenFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           findMany: {
-            args: Prisma.TokenFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>[]
+            args: Prisma.OrderFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>[]
           }
           create: {
-            args: Prisma.TokenCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           createMany: {
-            args: Prisma.TokenCreateManyArgs<ExtArgs>
+            args: Prisma.OrderCreateManyArgs<ExtArgs>
             result: BatchPayload
           }
           createManyAndReturn: {
-            args: Prisma.TokenCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>[]
+            args: Prisma.OrderCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>[]
           }
           delete: {
-            args: Prisma.TokenDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           update: {
-            args: Prisma.TokenUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           deleteMany: {
-            args: Prisma.TokenDeleteManyArgs<ExtArgs>
+            args: Prisma.OrderDeleteManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateMany: {
-            args: Prisma.TokenUpdateManyArgs<ExtArgs>
+            args: Prisma.OrderUpdateManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateManyAndReturn: {
-            args: Prisma.TokenUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>[]
+            args: Prisma.OrderUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>[]
           }
           upsert: {
-            args: Prisma.TokenUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TokenPayload>
+            args: Prisma.OrderUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OrderPayload>
           }
           aggregate: {
-            args: Prisma.TokenAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateToken>
+            args: Prisma.OrderAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOrder>
           }
           groupBy: {
-            args: Prisma.TokenGroupByArgs<ExtArgs>
-            result: $Utils.Optional<TokenGroupByOutputType>[]
+            args: Prisma.OrderGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OrderGroupByOutputType>[]
           }
           count: {
-            args: Prisma.TokenCountArgs<ExtArgs>
-            result: $Utils.Optional<TokenCountAggregateOutputType> | number
+            args: Prisma.OrderCountArgs<ExtArgs>
+            result: $Utils.Optional<OrderCountAggregateOutputType> | number
+          }
+        }
+      }
+      MatchExecution: {
+        payload: Prisma.$MatchExecutionPayload<ExtArgs>
+        fields: Prisma.MatchExecutionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.MatchExecutionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.MatchExecutionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          findFirst: {
+            args: Prisma.MatchExecutionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.MatchExecutionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          findMany: {
+            args: Prisma.MatchExecutionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>[]
+          }
+          create: {
+            args: Prisma.MatchExecutionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          createMany: {
+            args: Prisma.MatchExecutionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.MatchExecutionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>[]
+          }
+          delete: {
+            args: Prisma.MatchExecutionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          update: {
+            args: Prisma.MatchExecutionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          deleteMany: {
+            args: Prisma.MatchExecutionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.MatchExecutionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.MatchExecutionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>[]
+          }
+          upsert: {
+            args: Prisma.MatchExecutionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchExecutionPayload>
+          }
+          aggregate: {
+            args: Prisma.MatchExecutionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateMatchExecution>
+          }
+          groupBy: {
+            args: Prisma.MatchExecutionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<MatchExecutionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.MatchExecutionCountArgs<ExtArgs>
+            result: $Utils.Optional<MatchExecutionCountAggregateOutputType> | number
+          }
+        }
+      }
+      Trade: {
+        payload: Prisma.$TradePayload<ExtArgs>
+        fields: Prisma.TradeFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.TradeFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.TradeFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          findFirst: {
+            args: Prisma.TradeFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.TradeFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          findMany: {
+            args: Prisma.TradeFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>[]
+          }
+          create: {
+            args: Prisma.TradeCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          createMany: {
+            args: Prisma.TradeCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.TradeCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>[]
+          }
+          delete: {
+            args: Prisma.TradeDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          update: {
+            args: Prisma.TradeUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          deleteMany: {
+            args: Prisma.TradeDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.TradeUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.TradeUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>[]
+          }
+          upsert: {
+            args: Prisma.TradeUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TradePayload>
+          }
+          aggregate: {
+            args: Prisma.TradeAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTrade>
+          }
+          groupBy: {
+            args: Prisma.TradeGroupByArgs<ExtArgs>
+            result: $Utils.Optional<TradeGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.TradeCountArgs<ExtArgs>
+            result: $Utils.Optional<TradeCountAggregateOutputType> | number
           }
         }
       }
@@ -1083,80 +1413,6 @@ export namespace Prisma {
           }
         }
       }
-      Trades: {
-        payload: Prisma.$TradesPayload<ExtArgs>
-        fields: Prisma.TradesFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.TradesFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.TradesFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          findFirst: {
-            args: Prisma.TradesFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.TradesFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          findMany: {
-            args: Prisma.TradesFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>[]
-          }
-          create: {
-            args: Prisma.TradesCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          createMany: {
-            args: Prisma.TradesCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.TradesCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>[]
-          }
-          delete: {
-            args: Prisma.TradesDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          update: {
-            args: Prisma.TradesUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          deleteMany: {
-            args: Prisma.TradesDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.TradesUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.TradesUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>[]
-          }
-          upsert: {
-            args: Prisma.TradesUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$TradesPayload>
-          }
-          aggregate: {
-            args: Prisma.TradesAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateTrades>
-          }
-          groupBy: {
-            args: Prisma.TradesGroupByArgs<ExtArgs>
-            result: $Utils.Optional<TradesGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.TradesCountArgs<ExtArgs>
-            result: $Utils.Optional<TradesCountAggregateOutputType> | number
-          }
-        }
-      }
     }
   } & {
     other: {
@@ -1225,11 +1481,26 @@ export namespace Prisma {
       isolationLevel?: Prisma.TransactionIsolationLevel
     }
     /**
-     * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
+     * A driver adapter that PrismaClient uses to connect to your database, such as the ones provided by `@prisma/adapter-pg`, `@prisma/adapter-libsql`, `@prisma/adapter-planetscale`, etc.
+     * 
+     * A driver adapter is **required** unless you connect to your database through Prisma Accelerate (in which case use `accelerateUrl` instead).
+     * 
+     * Learn more: https://pris.ly/d/driver-adapters
+     * 
+     * @example
+     * ```ts
+     * import { PrismaPg } from '@prisma/adapter-pg'
+     * import { PrismaClient } from './generated/prisma/client'
+     * 
+     * const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+     * const prisma = new PrismaClient({ adapter })
+     * ```
      */
     adapter?: runtime.SqlDriverAdapterFactory
     /**
-     * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
+     * The Prisma Accelerate connection URL. Use this option to connect to your database through Prisma Accelerate instead of using a driver adapter to connect directly.
+     * 
+     * Learn more: https://pris.ly/d/accelerate
      */
     accelerateUrl?: string
     /**
@@ -1267,10 +1538,12 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     user?: UserOmit
     account?: AccountOmit
+    stock?: StockOmit
     wallet?: WalletOmit
-    token?: TokenOmit
+    order?: OrderOmit
+    matchExecution?: MatchExecutionOmit
+    trade?: TradeOmit
     transaction?: TransactionOmit
-    trades?: TradesOmit
   }
 
   /* Types for Logging */
@@ -1352,10 +1625,12 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     accounts: number
+    orders: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs
+    orders?: boolean | UserCountOutputTypeCountOrdersArgs
   }
 
   // Custom InputTypes
@@ -1374,6 +1649,44 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountAccountsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: AccountWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
+  }
+
+
+  /**
+   * Count Type StockCountOutputType
+   */
+
+  export type StockCountOutputType = {
+    orders: number
+  }
+
+  export type StockCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    orders?: boolean | StockCountOutputTypeCountOrdersArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * StockCountOutputType without action
+   */
+  export type StockCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockCountOutputType
+     */
+    select?: StockCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * StockCountOutputType without action
+   */
+  export type StockCountOutputTypeCountOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
   }
 
 
@@ -1429,7 +1742,6 @@ export namespace Prisma {
     emailVerified: Date | null
     image: string | null
     password: string | null
-    isVerified: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1441,7 +1753,6 @@ export namespace Prisma {
     emailVerified: Date | null
     image: string | null
     password: string | null
-    isVerified: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1453,7 +1764,6 @@ export namespace Prisma {
     emailVerified: number
     image: number
     password: number
-    isVerified: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -1467,7 +1777,6 @@ export namespace Prisma {
     emailVerified?: true
     image?: true
     password?: true
-    isVerified?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -1479,7 +1788,6 @@ export namespace Prisma {
     emailVerified?: true
     image?: true
     password?: true
-    isVerified?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -1491,7 +1799,6 @@ export namespace Prisma {
     emailVerified?: true
     image?: true
     password?: true
-    isVerified?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -1576,7 +1883,6 @@ export namespace Prisma {
     emailVerified: Date | null
     image: string | null
     password: string | null
-    isVerified: boolean
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -1605,12 +1911,11 @@ export namespace Prisma {
     emailVerified?: boolean
     image?: boolean
     password?: boolean
-    isVerified?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     accounts?: boolean | User$accountsArgs<ExtArgs>
     wallet?: boolean | User$walletArgs<ExtArgs>
-    token?: boolean | User$tokenArgs<ExtArgs>
+    orders?: boolean | User$ordersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1621,7 +1926,6 @@ export namespace Prisma {
     emailVerified?: boolean
     image?: boolean
     password?: boolean
-    isVerified?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1633,7 +1937,6 @@ export namespace Prisma {
     emailVerified?: boolean
     image?: boolean
     password?: boolean
-    isVerified?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1645,16 +1948,15 @@ export namespace Prisma {
     emailVerified?: boolean
     image?: boolean
     password?: boolean
-    isVerified?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "isVerified" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "image" | "password" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     wallet?: boolean | User$walletArgs<ExtArgs>
-    token?: boolean | User$tokenArgs<ExtArgs>
+    orders?: boolean | User$ordersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1665,7 +1967,7 @@ export namespace Prisma {
     objects: {
       accounts: Prisma.$AccountPayload<ExtArgs>[]
       wallet: Prisma.$WalletPayload<ExtArgs> | null
-      token: Prisma.$TokenPayload<ExtArgs> | null
+      orders: Prisma.$OrderPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -1674,7 +1976,6 @@ export namespace Prisma {
       emailVerified: Date | null
       image: string | null
       password: string | null
-      isVerified: boolean
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -2073,7 +2374,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     accounts<T extends User$accountsArgs<ExtArgs> = {}>(args?: Subset<T, User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     wallet<T extends User$walletArgs<ExtArgs> = {}>(args?: Subset<T, User$walletArgs<ExtArgs>>): Prisma__WalletClient<$Result.GetResult<Prisma.$WalletPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    token<T extends User$tokenArgs<ExtArgs> = {}>(args?: Subset<T, User$tokenArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    orders<T extends User$ordersArgs<ExtArgs> = {}>(args?: Subset<T, User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2109,7 +2410,6 @@ export namespace Prisma {
     readonly emailVerified: FieldRef<"User", 'DateTime'>
     readonly image: FieldRef<"User", 'String'>
     readonly password: FieldRef<"User", 'String'>
-    readonly isVerified: FieldRef<"User", 'Boolean'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -2548,22 +2848,27 @@ export namespace Prisma {
   }
 
   /**
-   * User.token
+   * User.orders
    */
-  export type User$tokenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$ordersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
-    where?: TokenWhereInput
+    include?: OrderInclude<ExtArgs> | null
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
+    cursor?: OrderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
   }
 
   /**
@@ -3774,6 +4079,1107 @@ export namespace Prisma {
 
 
   /**
+   * Model Stock
+   */
+
+  export type AggregateStock = {
+    _count: StockCountAggregateOutputType | null
+    _min: StockMinAggregateOutputType | null
+    _max: StockMaxAggregateOutputType | null
+  }
+
+  export type StockMinAggregateOutputType = {
+    symbol: string | null
+    companyName: string | null
+    status: $Enums.StockStatus | null
+    baseAsset: string | null
+    quoteAsset: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type StockMaxAggregateOutputType = {
+    symbol: string | null
+    companyName: string | null
+    status: $Enums.StockStatus | null
+    baseAsset: string | null
+    quoteAsset: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type StockCountAggregateOutputType = {
+    symbol: number
+    companyName: number
+    status: number
+    baseAsset: number
+    quoteAsset: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type StockMinAggregateInputType = {
+    symbol?: true
+    companyName?: true
+    status?: true
+    baseAsset?: true
+    quoteAsset?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type StockMaxAggregateInputType = {
+    symbol?: true
+    companyName?: true
+    status?: true
+    baseAsset?: true
+    quoteAsset?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type StockCountAggregateInputType = {
+    symbol?: true
+    companyName?: true
+    status?: true
+    baseAsset?: true
+    quoteAsset?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type StockAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Stock to aggregate.
+     */
+    where?: StockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Stocks to fetch.
+     */
+    orderBy?: StockOrderByWithRelationInput | StockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: StockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Stocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Stocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Stocks
+    **/
+    _count?: true | StockCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: StockMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: StockMaxAggregateInputType
+  }
+
+  export type GetStockAggregateType<T extends StockAggregateArgs> = {
+        [P in keyof T & keyof AggregateStock]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateStock[P]>
+      : GetScalarType<T[P], AggregateStock[P]>
+  }
+
+
+
+
+  export type StockGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: StockWhereInput
+    orderBy?: StockOrderByWithAggregationInput | StockOrderByWithAggregationInput[]
+    by: StockScalarFieldEnum[] | StockScalarFieldEnum
+    having?: StockScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: StockCountAggregateInputType | true
+    _min?: StockMinAggregateInputType
+    _max?: StockMaxAggregateInputType
+  }
+
+  export type StockGroupByOutputType = {
+    symbol: string
+    companyName: string
+    status: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset: string
+    createdAt: Date
+    updatedAt: Date
+    _count: StockCountAggregateOutputType | null
+    _min: StockMinAggregateOutputType | null
+    _max: StockMaxAggregateOutputType | null
+  }
+
+  type GetStockGroupByPayload<T extends StockGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<StockGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof StockGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], StockGroupByOutputType[P]>
+            : GetScalarType<T[P], StockGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type StockSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    symbol?: boolean
+    companyName?: boolean
+    status?: boolean
+    baseAsset?: boolean
+    quoteAsset?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    orders?: boolean | Stock$ordersArgs<ExtArgs>
+    _count?: boolean | StockCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["stock"]>
+
+  export type StockSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    symbol?: boolean
+    companyName?: boolean
+    status?: boolean
+    baseAsset?: boolean
+    quoteAsset?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["stock"]>
+
+  export type StockSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    symbol?: boolean
+    companyName?: boolean
+    status?: boolean
+    baseAsset?: boolean
+    quoteAsset?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["stock"]>
+
+  export type StockSelectScalar = {
+    symbol?: boolean
+    companyName?: boolean
+    status?: boolean
+    baseAsset?: boolean
+    quoteAsset?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type StockOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"symbol" | "companyName" | "status" | "baseAsset" | "quoteAsset" | "createdAt" | "updatedAt", ExtArgs["result"]["stock"]>
+  export type StockInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    orders?: boolean | Stock$ordersArgs<ExtArgs>
+    _count?: boolean | StockCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type StockIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type StockIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $StockPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Stock"
+    objects: {
+      orders: Prisma.$OrderPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      symbol: string
+      companyName: string
+      status: $Enums.StockStatus
+      baseAsset: string
+      quoteAsset: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["stock"]>
+    composites: {}
+  }
+
+  type StockGetPayload<S extends boolean | null | undefined | StockDefaultArgs> = $Result.GetResult<Prisma.$StockPayload, S>
+
+  type StockCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<StockFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: StockCountAggregateInputType | true
+    }
+
+  export interface StockDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Stock'], meta: { name: 'Stock' } }
+    /**
+     * Find zero or one Stock that matches the filter.
+     * @param {StockFindUniqueArgs} args - Arguments to find a Stock
+     * @example
+     * // Get one Stock
+     * const stock = await prisma.stock.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends StockFindUniqueArgs>(args: SelectSubset<T, StockFindUniqueArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Stock that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {StockFindUniqueOrThrowArgs} args - Arguments to find a Stock
+     * @example
+     * // Get one Stock
+     * const stock = await prisma.stock.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends StockFindUniqueOrThrowArgs>(args: SelectSubset<T, StockFindUniqueOrThrowArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Stock that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockFindFirstArgs} args - Arguments to find a Stock
+     * @example
+     * // Get one Stock
+     * const stock = await prisma.stock.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends StockFindFirstArgs>(args?: SelectSubset<T, StockFindFirstArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Stock that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockFindFirstOrThrowArgs} args - Arguments to find a Stock
+     * @example
+     * // Get one Stock
+     * const stock = await prisma.stock.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends StockFindFirstOrThrowArgs>(args?: SelectSubset<T, StockFindFirstOrThrowArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Stocks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Stocks
+     * const stocks = await prisma.stock.findMany()
+     * 
+     * // Get first 10 Stocks
+     * const stocks = await prisma.stock.findMany({ take: 10 })
+     * 
+     * // Only select the `symbol`
+     * const stockWithSymbolOnly = await prisma.stock.findMany({ select: { symbol: true } })
+     * 
+     */
+    findMany<T extends StockFindManyArgs>(args?: SelectSubset<T, StockFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Stock.
+     * @param {StockCreateArgs} args - Arguments to create a Stock.
+     * @example
+     * // Create one Stock
+     * const Stock = await prisma.stock.create({
+     *   data: {
+     *     // ... data to create a Stock
+     *   }
+     * })
+     * 
+     */
+    create<T extends StockCreateArgs>(args: SelectSubset<T, StockCreateArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Stocks.
+     * @param {StockCreateManyArgs} args - Arguments to create many Stocks.
+     * @example
+     * // Create many Stocks
+     * const stock = await prisma.stock.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends StockCreateManyArgs>(args?: SelectSubset<T, StockCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Stocks and returns the data saved in the database.
+     * @param {StockCreateManyAndReturnArgs} args - Arguments to create many Stocks.
+     * @example
+     * // Create many Stocks
+     * const stock = await prisma.stock.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Stocks and only return the `symbol`
+     * const stockWithSymbolOnly = await prisma.stock.createManyAndReturn({
+     *   select: { symbol: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends StockCreateManyAndReturnArgs>(args?: SelectSubset<T, StockCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Stock.
+     * @param {StockDeleteArgs} args - Arguments to delete one Stock.
+     * @example
+     * // Delete one Stock
+     * const Stock = await prisma.stock.delete({
+     *   where: {
+     *     // ... filter to delete one Stock
+     *   }
+     * })
+     * 
+     */
+    delete<T extends StockDeleteArgs>(args: SelectSubset<T, StockDeleteArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Stock.
+     * @param {StockUpdateArgs} args - Arguments to update one Stock.
+     * @example
+     * // Update one Stock
+     * const stock = await prisma.stock.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends StockUpdateArgs>(args: SelectSubset<T, StockUpdateArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Stocks.
+     * @param {StockDeleteManyArgs} args - Arguments to filter Stocks to delete.
+     * @example
+     * // Delete a few Stocks
+     * const { count } = await prisma.stock.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends StockDeleteManyArgs>(args?: SelectSubset<T, StockDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Stocks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Stocks
+     * const stock = await prisma.stock.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends StockUpdateManyArgs>(args: SelectSubset<T, StockUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Stocks and returns the data updated in the database.
+     * @param {StockUpdateManyAndReturnArgs} args - Arguments to update many Stocks.
+     * @example
+     * // Update many Stocks
+     * const stock = await prisma.stock.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Stocks and only return the `symbol`
+     * const stockWithSymbolOnly = await prisma.stock.updateManyAndReturn({
+     *   select: { symbol: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends StockUpdateManyAndReturnArgs>(args: SelectSubset<T, StockUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Stock.
+     * @param {StockUpsertArgs} args - Arguments to update or create a Stock.
+     * @example
+     * // Update or create a Stock
+     * const stock = await prisma.stock.upsert({
+     *   create: {
+     *     // ... data to create a Stock
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Stock we want to update
+     *   }
+     * })
+     */
+    upsert<T extends StockUpsertArgs>(args: SelectSubset<T, StockUpsertArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Stocks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockCountArgs} args - Arguments to filter Stocks to count.
+     * @example
+     * // Count the number of Stocks
+     * const count = await prisma.stock.count({
+     *   where: {
+     *     // ... the filter for the Stocks we want to count
+     *   }
+     * })
+    **/
+    count<T extends StockCountArgs>(
+      args?: Subset<T, StockCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], StockCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Stock.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends StockAggregateArgs>(args: Subset<T, StockAggregateArgs>): Prisma.PrismaPromise<GetStockAggregateType<T>>
+
+    /**
+     * Group by Stock.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends StockGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: StockGroupByArgs['orderBy'] }
+        : { orderBy?: StockGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, StockGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetStockGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Stock model
+   */
+  readonly fields: StockFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Stock.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__StockClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    orders<T extends Stock$ordersArgs<ExtArgs> = {}>(args?: Subset<T, Stock$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Stock model
+   */
+  interface StockFieldRefs {
+    readonly symbol: FieldRef<"Stock", 'String'>
+    readonly companyName: FieldRef<"Stock", 'String'>
+    readonly status: FieldRef<"Stock", 'StockStatus'>
+    readonly baseAsset: FieldRef<"Stock", 'String'>
+    readonly quoteAsset: FieldRef<"Stock", 'String'>
+    readonly createdAt: FieldRef<"Stock", 'DateTime'>
+    readonly updatedAt: FieldRef<"Stock", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Stock findUnique
+   */
+  export type StockFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter, which Stock to fetch.
+     */
+    where: StockWhereUniqueInput
+  }
+
+  /**
+   * Stock findUniqueOrThrow
+   */
+  export type StockFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter, which Stock to fetch.
+     */
+    where: StockWhereUniqueInput
+  }
+
+  /**
+   * Stock findFirst
+   */
+  export type StockFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter, which Stock to fetch.
+     */
+    where?: StockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Stocks to fetch.
+     */
+    orderBy?: StockOrderByWithRelationInput | StockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Stocks.
+     */
+    cursor?: StockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Stocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Stocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Stocks.
+     */
+    distinct?: StockScalarFieldEnum | StockScalarFieldEnum[]
+  }
+
+  /**
+   * Stock findFirstOrThrow
+   */
+  export type StockFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter, which Stock to fetch.
+     */
+    where?: StockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Stocks to fetch.
+     */
+    orderBy?: StockOrderByWithRelationInput | StockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Stocks.
+     */
+    cursor?: StockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Stocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Stocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Stocks.
+     */
+    distinct?: StockScalarFieldEnum | StockScalarFieldEnum[]
+  }
+
+  /**
+   * Stock findMany
+   */
+  export type StockFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter, which Stocks to fetch.
+     */
+    where?: StockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Stocks to fetch.
+     */
+    orderBy?: StockOrderByWithRelationInput | StockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Stocks.
+     */
+    cursor?: StockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Stocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Stocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Stocks.
+     */
+    distinct?: StockScalarFieldEnum | StockScalarFieldEnum[]
+  }
+
+  /**
+   * Stock create
+   */
+  export type StockCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Stock.
+     */
+    data: XOR<StockCreateInput, StockUncheckedCreateInput>
+  }
+
+  /**
+   * Stock createMany
+   */
+  export type StockCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Stocks.
+     */
+    data: StockCreateManyInput | StockCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Stock createManyAndReturn
+   */
+  export type StockCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * The data used to create many Stocks.
+     */
+    data: StockCreateManyInput | StockCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Stock update
+   */
+  export type StockUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Stock.
+     */
+    data: XOR<StockUpdateInput, StockUncheckedUpdateInput>
+    /**
+     * Choose, which Stock to update.
+     */
+    where: StockWhereUniqueInput
+  }
+
+  /**
+   * Stock updateMany
+   */
+  export type StockUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Stocks.
+     */
+    data: XOR<StockUpdateManyMutationInput, StockUncheckedUpdateManyInput>
+    /**
+     * Filter which Stocks to update
+     */
+    where?: StockWhereInput
+    /**
+     * Limit how many Stocks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Stock updateManyAndReturn
+   */
+  export type StockUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * The data used to update Stocks.
+     */
+    data: XOR<StockUpdateManyMutationInput, StockUncheckedUpdateManyInput>
+    /**
+     * Filter which Stocks to update
+     */
+    where?: StockWhereInput
+    /**
+     * Limit how many Stocks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Stock upsert
+   */
+  export type StockUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Stock to update in case it exists.
+     */
+    where: StockWhereUniqueInput
+    /**
+     * In case the Stock found by the `where` argument doesn't exist, create a new Stock with this data.
+     */
+    create: XOR<StockCreateInput, StockUncheckedCreateInput>
+    /**
+     * In case the Stock was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<StockUpdateInput, StockUncheckedUpdateInput>
+  }
+
+  /**
+   * Stock delete
+   */
+  export type StockDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+    /**
+     * Filter which Stock to delete.
+     */
+    where: StockWhereUniqueInput
+  }
+
+  /**
+   * Stock deleteMany
+   */
+  export type StockDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Stocks to delete
+     */
+    where?: StockWhereInput
+    /**
+     * Limit how many Stocks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Stock.orders
+   */
+  export type Stock$ordersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Order
+     */
+    select?: OrderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Order
+     */
+    omit?: OrderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrderInclude<ExtArgs> | null
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
+    cursor?: OrderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
+  }
+
+  /**
+   * Stock without action
+   */
+  export type StockDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Stock
+     */
+    select?: StockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Stock
+     */
+    omit?: StockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Wallet
    */
 
@@ -4884,338 +6290,499 @@ export namespace Prisma {
 
 
   /**
-   * Model Token
+   * Model Order
    */
 
-  export type AggregateToken = {
-    _count: TokenCountAggregateOutputType | null
-    _min: TokenMinAggregateOutputType | null
-    _max: TokenMaxAggregateOutputType | null
+  export type AggregateOrder = {
+    _count: OrderCountAggregateOutputType | null
+    _avg: OrderAvgAggregateOutputType | null
+    _sum: OrderSumAggregateOutputType | null
+    _min: OrderMinAggregateOutputType | null
+    _max: OrderMaxAggregateOutputType | null
   }
 
-  export type TokenMinAggregateOutputType = {
+  export type OrderAvgAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    filledQty: Decimal | null
+    remainingQty: Decimal | null
+  }
+
+  export type OrderSumAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    filledQty: Decimal | null
+    remainingQty: Decimal | null
+  }
+
+  export type OrderMinAggregateOutputType = {
     id: string | null
     userId: string | null
-    verifyToken: string | null
-    verifyTokenExp: Date | null
+    symbol: string | null
+    side: $Enums.OrderSide | null
+    orderType: $Enums.OrderType | null
+    price: Decimal | null
+    quantity: Decimal | null
+    filledQty: Decimal | null
+    remainingQty: Decimal | null
+    status: $Enums.OrderStatus | null
+    exchangeOrderId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
   }
 
-  export type TokenMaxAggregateOutputType = {
+  export type OrderMaxAggregateOutputType = {
     id: string | null
     userId: string | null
-    verifyToken: string | null
-    verifyTokenExp: Date | null
+    symbol: string | null
+    side: $Enums.OrderSide | null
+    orderType: $Enums.OrderType | null
+    price: Decimal | null
+    quantity: Decimal | null
+    filledQty: Decimal | null
+    remainingQty: Decimal | null
+    status: $Enums.OrderStatus | null
+    exchangeOrderId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
   }
 
-  export type TokenCountAggregateOutputType = {
+  export type OrderCountAggregateOutputType = {
     id: number
     userId: number
-    verifyToken: number
-    verifyTokenExp: number
+    symbol: number
+    side: number
+    orderType: number
+    price: number
+    quantity: number
+    filledQty: number
+    remainingQty: number
+    status: number
+    exchangeOrderId: number
+    createdAt: number
+    updatedAt: number
     _all: number
   }
 
 
-  export type TokenMinAggregateInputType = {
-    id?: true
-    userId?: true
-    verifyToken?: true
-    verifyTokenExp?: true
+  export type OrderAvgAggregateInputType = {
+    price?: true
+    quantity?: true
+    filledQty?: true
+    remainingQty?: true
   }
 
-  export type TokenMaxAggregateInputType = {
-    id?: true
-    userId?: true
-    verifyToken?: true
-    verifyTokenExp?: true
+  export type OrderSumAggregateInputType = {
+    price?: true
+    quantity?: true
+    filledQty?: true
+    remainingQty?: true
   }
 
-  export type TokenCountAggregateInputType = {
+  export type OrderMinAggregateInputType = {
     id?: true
     userId?: true
-    verifyToken?: true
-    verifyTokenExp?: true
+    symbol?: true
+    side?: true
+    orderType?: true
+    price?: true
+    quantity?: true
+    filledQty?: true
+    remainingQty?: true
+    status?: true
+    exchangeOrderId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type OrderMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    symbol?: true
+    side?: true
+    orderType?: true
+    price?: true
+    quantity?: true
+    filledQty?: true
+    remainingQty?: true
+    status?: true
+    exchangeOrderId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type OrderCountAggregateInputType = {
+    id?: true
+    userId?: true
+    symbol?: true
+    side?: true
+    orderType?: true
+    price?: true
+    quantity?: true
+    filledQty?: true
+    remainingQty?: true
+    status?: true
+    exchangeOrderId?: true
+    createdAt?: true
+    updatedAt?: true
     _all?: true
   }
 
-  export type TokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which Token to aggregate.
+     * Filter which Order to aggregate.
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Tokens to fetch.
+     * Determine the order of Orders to fetch.
      */
-    orderBy?: TokenOrderByWithRelationInput | TokenOrderByWithRelationInput[]
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
      * Sets the start position
      */
-    cursor?: TokenWhereUniqueInput
+    cursor?: OrderWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Tokens from the position of the cursor.
+     * Take `±n` Orders from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Tokens.
+     * Skip the first `n` Orders.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Count returned Tokens
+     * Count returned Orders
     **/
-    _count?: true | TokenCountAggregateInputType
+    _count?: true | OrderCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: OrderAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: OrderSumAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the minimum value
     **/
-    _min?: TokenMinAggregateInputType
+    _min?: OrderMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the maximum value
     **/
-    _max?: TokenMaxAggregateInputType
+    _max?: OrderMaxAggregateInputType
   }
 
-  export type GetTokenAggregateType<T extends TokenAggregateArgs> = {
-        [P in keyof T & keyof AggregateToken]: P extends '_count' | 'count'
+  export type GetOrderAggregateType<T extends OrderAggregateArgs> = {
+        [P in keyof T & keyof AggregateOrder]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
-        : GetScalarType<T[P], AggregateToken[P]>
-      : GetScalarType<T[P], AggregateToken[P]>
+        : GetScalarType<T[P], AggregateOrder[P]>
+      : GetScalarType<T[P], AggregateOrder[P]>
   }
 
 
 
 
-  export type TokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: TokenWhereInput
-    orderBy?: TokenOrderByWithAggregationInput | TokenOrderByWithAggregationInput[]
-    by: TokenScalarFieldEnum[] | TokenScalarFieldEnum
-    having?: TokenScalarWhereWithAggregatesInput
+  export type OrderGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithAggregationInput | OrderOrderByWithAggregationInput[]
+    by: OrderScalarFieldEnum[] | OrderScalarFieldEnum
+    having?: OrderScalarWhereWithAggregatesInput
     take?: number
     skip?: number
-    _count?: TokenCountAggregateInputType | true
-    _min?: TokenMinAggregateInputType
-    _max?: TokenMaxAggregateInputType
+    _count?: OrderCountAggregateInputType | true
+    _avg?: OrderAvgAggregateInputType
+    _sum?: OrderSumAggregateInputType
+    _min?: OrderMinAggregateInputType
+    _max?: OrderMaxAggregateInputType
   }
 
-  export type TokenGroupByOutputType = {
+  export type OrderGroupByOutputType = {
     id: string
     userId: string
-    verifyToken: string | null
-    verifyTokenExp: Date | null
-    _count: TokenCountAggregateOutputType | null
-    _min: TokenMinAggregateOutputType | null
-    _max: TokenMaxAggregateOutputType | null
+    symbol: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal
+    quantity: Decimal
+    filledQty: Decimal
+    remainingQty: Decimal
+    status: $Enums.OrderStatus
+    exchangeOrderId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: OrderCountAggregateOutputType | null
+    _avg: OrderAvgAggregateOutputType | null
+    _sum: OrderSumAggregateOutputType | null
+    _min: OrderMinAggregateOutputType | null
+    _max: OrderMaxAggregateOutputType | null
   }
 
-  type GetTokenGroupByPayload<T extends TokenGroupByArgs> = Prisma.PrismaPromise<
+  type GetOrderGroupByPayload<T extends OrderGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<TokenGroupByOutputType, T['by']> &
+      PickEnumerable<OrderGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof TokenGroupByOutputType))]: P extends '_count'
+          [P in ((keyof T) & (keyof OrderGroupByOutputType))]: P extends '_count'
             ? T[P] extends boolean
               ? number
-              : GetScalarType<T[P], TokenGroupByOutputType[P]>
-            : GetScalarType<T[P], TokenGroupByOutputType[P]>
+              : GetScalarType<T[P], OrderGroupByOutputType[P]>
+            : GetScalarType<T[P], OrderGroupByOutputType[P]>
         }
       >
     >
 
 
-  export type TokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type OrderSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    verifyToken?: boolean
-    verifyTokenExp?: boolean
+    symbol?: boolean
+    side?: boolean
+    orderType?: boolean
+    price?: boolean
+    quantity?: boolean
+    filledQty?: boolean
+    remainingQty?: boolean
+    status?: boolean
+    exchangeOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["token"]>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["order"]>
 
-  export type TokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type OrderSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    verifyToken?: boolean
-    verifyTokenExp?: boolean
+    symbol?: boolean
+    side?: boolean
+    orderType?: boolean
+    price?: boolean
+    quantity?: boolean
+    filledQty?: boolean
+    remainingQty?: boolean
+    status?: boolean
+    exchangeOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["token"]>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["order"]>
 
-  export type TokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+  export type OrderSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    verifyToken?: boolean
-    verifyTokenExp?: boolean
+    symbol?: boolean
+    side?: boolean
+    orderType?: boolean
+    price?: boolean
+    quantity?: boolean
+    filledQty?: boolean
+    remainingQty?: boolean
+    status?: boolean
+    exchangeOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["token"]>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["order"]>
 
-  export type TokenSelectScalar = {
+  export type OrderSelectScalar = {
     id?: boolean
     userId?: boolean
-    verifyToken?: boolean
-    verifyTokenExp?: boolean
+    symbol?: boolean
+    side?: boolean
+    orderType?: boolean
+    price?: boolean
+    quantity?: boolean
+    filledQty?: boolean
+    remainingQty?: boolean
+    status?: boolean
+    exchangeOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
   }
 
-  export type TokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "verifyToken" | "verifyTokenExp", ExtArgs["result"]["token"]>
-  export type TokenInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "symbol" | "side" | "orderType" | "price" | "quantity" | "filledQty" | "remainingQty" | "status" | "exchangeOrderId" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+  export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
   }
-  export type TokenIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
   }
-  export type TokenIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
+    stock?: boolean | StockDefaultArgs<ExtArgs>
   }
 
-  export type $TokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Token"
+  export type $OrderPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Order"
     objects: {
       user: Prisma.$UserPayload<ExtArgs>
+      stock: Prisma.$StockPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string
-      verifyToken: string | null
-      verifyTokenExp: Date | null
-    }, ExtArgs["result"]["token"]>
+      symbol: string
+      side: $Enums.OrderSide
+      orderType: $Enums.OrderType
+      price: Prisma.Decimal
+      quantity: Prisma.Decimal
+      filledQty: Prisma.Decimal
+      remainingQty: Prisma.Decimal
+      status: $Enums.OrderStatus
+      exchangeOrderId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["order"]>
     composites: {}
   }
 
-  type TokenGetPayload<S extends boolean | null | undefined | TokenDefaultArgs> = $Result.GetResult<Prisma.$TokenPayload, S>
+  type OrderGetPayload<S extends boolean | null | undefined | OrderDefaultArgs> = $Result.GetResult<Prisma.$OrderPayload, S>
 
-  type TokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<TokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: TokenCountAggregateInputType | true
+  type OrderCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OrderFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OrderCountAggregateInputType | true
     }
 
-  export interface TokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Token'], meta: { name: 'Token' } }
+  export interface OrderDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Order'], meta: { name: 'Order' } }
     /**
-     * Find zero or one Token that matches the filter.
-     * @param {TokenFindUniqueArgs} args - Arguments to find a Token
+     * Find zero or one Order that matches the filter.
+     * @param {OrderFindUniqueArgs} args - Arguments to find a Order
      * @example
-     * // Get one Token
-     * const token = await prisma.token.findUnique({
+     * // Get one Order
+     * const order = await prisma.order.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends TokenFindUniqueArgs>(args: SelectSubset<T, TokenFindUniqueArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends OrderFindUniqueArgs>(args: SelectSubset<T, OrderFindUniqueArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find one Token that matches the filter or throw an error with `error.code='P2025'`
+     * Find one Order that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {TokenFindUniqueOrThrowArgs} args - Arguments to find a Token
+     * @param {OrderFindUniqueOrThrowArgs} args - Arguments to find a Order
      * @example
-     * // Get one Token
-     * const token = await prisma.token.findUniqueOrThrow({
+     * // Get one Order
+     * const order = await prisma.order.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends TokenFindUniqueOrThrowArgs>(args: SelectSubset<T, TokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends OrderFindUniqueOrThrowArgs>(args: SelectSubset<T, OrderFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Token that matches the filter.
+     * Find the first Order that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenFindFirstArgs} args - Arguments to find a Token
+     * @param {OrderFindFirstArgs} args - Arguments to find a Order
      * @example
-     * // Get one Token
-     * const token = await prisma.token.findFirst({
+     * // Get one Order
+     * const order = await prisma.order.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends TokenFindFirstArgs>(args?: SelectSubset<T, TokenFindFirstArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends OrderFindFirstArgs>(args?: SelectSubset<T, OrderFindFirstArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first Token that matches the filter or
+     * Find the first Order that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenFindFirstOrThrowArgs} args - Arguments to find a Token
+     * @param {OrderFindFirstOrThrowArgs} args - Arguments to find a Order
      * @example
-     * // Get one Token
-     * const token = await prisma.token.findFirstOrThrow({
+     * // Get one Order
+     * const order = await prisma.order.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends TokenFindFirstOrThrowArgs>(args?: SelectSubset<T, TokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends OrderFindFirstOrThrowArgs>(args?: SelectSubset<T, OrderFindFirstOrThrowArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find zero or more Tokens that matches the filter.
+     * Find zero or more Orders that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {OrderFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all Tokens
-     * const tokens = await prisma.token.findMany()
+     * // Get all Orders
+     * const orders = await prisma.order.findMany()
      * 
-     * // Get first 10 Tokens
-     * const tokens = await prisma.token.findMany({ take: 10 })
+     * // Get first 10 Orders
+     * const orders = await prisma.order.findMany({ take: 10 })
      * 
      * // Only select the `id`
-     * const tokenWithIdOnly = await prisma.token.findMany({ select: { id: true } })
+     * const orderWithIdOnly = await prisma.order.findMany({ select: { id: true } })
      * 
      */
-    findMany<T extends TokenFindManyArgs>(args?: SelectSubset<T, TokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends OrderFindManyArgs>(args?: SelectSubset<T, OrderFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
     /**
-     * Create a Token.
-     * @param {TokenCreateArgs} args - Arguments to create a Token.
+     * Create a Order.
+     * @param {OrderCreateArgs} args - Arguments to create a Order.
      * @example
-     * // Create one Token
-     * const Token = await prisma.token.create({
+     * // Create one Order
+     * const Order = await prisma.order.create({
      *   data: {
-     *     // ... data to create a Token
+     *     // ... data to create a Order
      *   }
      * })
      * 
      */
-    create<T extends TokenCreateArgs>(args: SelectSubset<T, TokenCreateArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends OrderCreateArgs>(args: SelectSubset<T, OrderCreateArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Create many Tokens.
-     * @param {TokenCreateManyArgs} args - Arguments to create many Tokens.
+     * Create many Orders.
+     * @param {OrderCreateManyArgs} args - Arguments to create many Orders.
      * @example
-     * // Create many Tokens
-     * const token = await prisma.token.createMany({
+     * // Create many Orders
+     * const order = await prisma.order.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *     
      */
-    createMany<T extends TokenCreateManyArgs>(args?: SelectSubset<T, TokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends OrderCreateManyArgs>(args?: SelectSubset<T, OrderCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Create many Tokens and returns the data saved in the database.
-     * @param {TokenCreateManyAndReturnArgs} args - Arguments to create many Tokens.
+     * Create many Orders and returns the data saved in the database.
+     * @param {OrderCreateManyAndReturnArgs} args - Arguments to create many Orders.
      * @example
-     * // Create many Tokens
-     * const token = await prisma.token.createManyAndReturn({
+     * // Create many Orders
+     * const order = await prisma.order.createManyAndReturn({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      * 
-     * // Create many Tokens and only return the `id`
-     * const tokenWithIdOnly = await prisma.token.createManyAndReturn({
+     * // Create many Orders and only return the `id`
+     * const orderWithIdOnly = await prisma.order.createManyAndReturn({
      *   select: { id: true },
      *   data: [
      *     // ... provide data here
@@ -5225,28 +6792,28 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    createManyAndReturn<T extends TokenCreateManyAndReturnArgs>(args?: SelectSubset<T, TokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends OrderCreateManyAndReturnArgs>(args?: SelectSubset<T, OrderCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Delete a Token.
-     * @param {TokenDeleteArgs} args - Arguments to delete one Token.
+     * Delete a Order.
+     * @param {OrderDeleteArgs} args - Arguments to delete one Order.
      * @example
-     * // Delete one Token
-     * const Token = await prisma.token.delete({
+     * // Delete one Order
+     * const Order = await prisma.order.delete({
      *   where: {
-     *     // ... filter to delete one Token
+     *     // ... filter to delete one Order
      *   }
      * })
      * 
      */
-    delete<T extends TokenDeleteArgs>(args: SelectSubset<T, TokenDeleteArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends OrderDeleteArgs>(args: SelectSubset<T, OrderDeleteArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Update one Token.
-     * @param {TokenUpdateArgs} args - Arguments to update one Token.
+     * Update one Order.
+     * @param {OrderUpdateArgs} args - Arguments to update one Order.
      * @example
-     * // Update one Token
-     * const token = await prisma.token.update({
+     * // Update one Order
+     * const order = await prisma.order.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5256,30 +6823,30 @@ export namespace Prisma {
      * })
      * 
      */
-    update<T extends TokenUpdateArgs>(args: SelectSubset<T, TokenUpdateArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends OrderUpdateArgs>(args: SelectSubset<T, OrderUpdateArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Delete zero or more Tokens.
-     * @param {TokenDeleteManyArgs} args - Arguments to filter Tokens to delete.
+     * Delete zero or more Orders.
+     * @param {OrderDeleteManyArgs} args - Arguments to filter Orders to delete.
      * @example
-     * // Delete a few Tokens
-     * const { count } = await prisma.token.deleteMany({
+     * // Delete a few Orders
+     * const { count } = await prisma.order.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      * 
      */
-    deleteMany<T extends TokenDeleteManyArgs>(args?: SelectSubset<T, TokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends OrderDeleteManyArgs>(args?: SelectSubset<T, OrderDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more Tokens.
+     * Update zero or more Orders.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {OrderUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many Tokens
-     * const token = await prisma.token.updateMany({
+     * // Update many Orders
+     * const order = await prisma.order.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5289,14 +6856,14 @@ export namespace Prisma {
      * })
      * 
      */
-    updateMany<T extends TokenUpdateManyArgs>(args: SelectSubset<T, TokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends OrderUpdateManyArgs>(args: SelectSubset<T, OrderUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more Tokens and returns the data updated in the database.
-     * @param {TokenUpdateManyAndReturnArgs} args - Arguments to update many Tokens.
+     * Update zero or more Orders and returns the data updated in the database.
+     * @param {OrderUpdateManyAndReturnArgs} args - Arguments to update many Orders.
      * @example
-     * // Update many Tokens
-     * const token = await prisma.token.updateManyAndReturn({
+     * // Update many Orders
+     * const order = await prisma.order.updateManyAndReturn({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5305,8 +6872,8 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Update zero or more Tokens and only return the `id`
-     * const tokenWithIdOnly = await prisma.token.updateManyAndReturn({
+     * // Update zero or more Orders and only return the `id`
+     * const orderWithIdOnly = await prisma.order.updateManyAndReturn({
      *   select: { id: true },
      *   where: {
      *     // ... provide filter here
@@ -5319,56 +6886,56 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    updateManyAndReturn<T extends TokenUpdateManyAndReturnArgs>(args: SelectSubset<T, TokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends OrderUpdateManyAndReturnArgs>(args: SelectSubset<T, OrderUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Create or update one Token.
-     * @param {TokenUpsertArgs} args - Arguments to update or create a Token.
+     * Create or update one Order.
+     * @param {OrderUpsertArgs} args - Arguments to update or create a Order.
      * @example
-     * // Update or create a Token
-     * const token = await prisma.token.upsert({
+     * // Update or create a Order
+     * const order = await prisma.order.upsert({
      *   create: {
-     *     // ... data to create a Token
+     *     // ... data to create a Order
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the Token we want to update
+     *     // ... the filter for the Order we want to update
      *   }
      * })
      */
-    upsert<T extends TokenUpsertArgs>(args: SelectSubset<T, TokenUpsertArgs<ExtArgs>>): Prisma__TokenClient<$Result.GetResult<Prisma.$TokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    upsert<T extends OrderUpsertArgs>(args: SelectSubset<T, OrderUpsertArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
     /**
-     * Count the number of Tokens.
+     * Count the number of Orders.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenCountArgs} args - Arguments to filter Tokens to count.
+     * @param {OrderCountArgs} args - Arguments to filter Orders to count.
      * @example
-     * // Count the number of Tokens
-     * const count = await prisma.token.count({
+     * // Count the number of Orders
+     * const count = await prisma.order.count({
      *   where: {
-     *     // ... the filter for the Tokens we want to count
+     *     // ... the filter for the Orders we want to count
      *   }
      * })
     **/
-    count<T extends TokenCountArgs>(
-      args?: Subset<T, TokenCountArgs>,
+    count<T extends OrderCountArgs>(
+      args?: Subset<T, OrderCountArgs>,
     ): Prisma.PrismaPromise<
       T extends $Utils.Record<'select', any>
         ? T['select'] extends true
           ? number
-          : GetScalarType<T['select'], TokenCountAggregateOutputType>
+          : GetScalarType<T['select'], OrderCountAggregateOutputType>
         : number
     >
 
     /**
-     * Allows you to perform aggregations operations on a Token.
+     * Allows you to perform aggregations operations on a Order.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {OrderAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -5388,13 +6955,13 @@ export namespace Prisma {
      *   take: 10,
      * })
     **/
-    aggregate<T extends TokenAggregateArgs>(args: Subset<T, TokenAggregateArgs>): Prisma.PrismaPromise<GetTokenAggregateType<T>>
+    aggregate<T extends OrderAggregateArgs>(args: Subset<T, OrderAggregateArgs>): Prisma.PrismaPromise<GetOrderAggregateType<T>>
 
     /**
-     * Group by Token.
+     * Group by Order.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {TokenGroupByArgs} args - Group by arguments.
+     * @param {OrderGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -5409,14 +6976,14 @@ export namespace Prisma {
      * 
     **/
     groupBy<
-      T extends TokenGroupByArgs,
+      T extends OrderGroupByArgs,
       HasSelectOrTake extends Or<
         Extends<'skip', Keys<T>>,
         Extends<'take', Keys<T>>
       >,
       OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: TokenGroupByArgs['orderBy'] }
-        : { orderBy?: TokenGroupByArgs['orderBy'] },
+        ? { orderBy: OrderGroupByArgs['orderBy'] }
+        : { orderBy?: OrderGroupByArgs['orderBy'] },
       OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
@@ -5465,22 +7032,23 @@ export namespace Prisma {
             ? never
             : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
         }[OrderFields]
-    >(args: SubsetIntersection<T, TokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+    >(args: SubsetIntersection<T, OrderGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOrderGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
   /**
-   * Fields of the Token model
+   * Fields of the Order model
    */
-  readonly fields: TokenFieldRefs;
+  readonly fields: OrderFieldRefs;
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for Token.
+   * The delegate class that acts as a "Promise-like" for Order.
    * Why is this prefixed with `Prisma__`?
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__TokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+  export interface Prisma__OrderClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    stock<T extends StockDefaultArgs<ExtArgs> = {}>(args?: Subset<T, StockDefaultArgs<ExtArgs>>): Prisma__StockClient<$Result.GetResult<Prisma.$StockPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5507,429 +7075,2639 @@ export namespace Prisma {
 
 
   /**
-   * Fields of the Token model
+   * Fields of the Order model
    */
-  interface TokenFieldRefs {
-    readonly id: FieldRef<"Token", 'String'>
-    readonly userId: FieldRef<"Token", 'String'>
-    readonly verifyToken: FieldRef<"Token", 'String'>
-    readonly verifyTokenExp: FieldRef<"Token", 'DateTime'>
+  interface OrderFieldRefs {
+    readonly id: FieldRef<"Order", 'String'>
+    readonly userId: FieldRef<"Order", 'String'>
+    readonly symbol: FieldRef<"Order", 'String'>
+    readonly side: FieldRef<"Order", 'OrderSide'>
+    readonly orderType: FieldRef<"Order", 'OrderType'>
+    readonly price: FieldRef<"Order", 'Decimal'>
+    readonly quantity: FieldRef<"Order", 'Decimal'>
+    readonly filledQty: FieldRef<"Order", 'Decimal'>
+    readonly remainingQty: FieldRef<"Order", 'Decimal'>
+    readonly status: FieldRef<"Order", 'OrderStatus'>
+    readonly exchangeOrderId: FieldRef<"Order", 'String'>
+    readonly createdAt: FieldRef<"Order", 'DateTime'>
+    readonly updatedAt: FieldRef<"Order", 'DateTime'>
   }
     
 
   // Custom InputTypes
   /**
-   * Token findUnique
+   * Order findUnique
    */
-  export type TokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter, which Token to fetch.
+     * Filter, which Order to fetch.
      */
-    where: TokenWhereUniqueInput
+    where: OrderWhereUniqueInput
   }
 
   /**
-   * Token findUniqueOrThrow
+   * Order findUniqueOrThrow
    */
-  export type TokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter, which Token to fetch.
+     * Filter, which Order to fetch.
      */
-    where: TokenWhereUniqueInput
+    where: OrderWhereUniqueInput
   }
 
   /**
-   * Token findFirst
+   * Order findFirst
    */
-  export type TokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter, which Token to fetch.
+     * Filter, which Order to fetch.
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Tokens to fetch.
+     * Determine the order of Orders to fetch.
      */
-    orderBy?: TokenOrderByWithRelationInput | TokenOrderByWithRelationInput[]
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for Tokens.
+     * Sets the position for searching for Orders.
      */
-    cursor?: TokenWhereUniqueInput
+    cursor?: OrderWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Tokens from the position of the cursor.
+     * Take `±n` Orders from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Tokens.
+     * Skip the first `n` Orders.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of Tokens.
+     * Filter by unique combinations of Orders.
      */
-    distinct?: TokenScalarFieldEnum | TokenScalarFieldEnum[]
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
   }
 
   /**
-   * Token findFirstOrThrow
+   * Order findFirstOrThrow
    */
-  export type TokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter, which Token to fetch.
+     * Filter, which Order to fetch.
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Tokens to fetch.
+     * Determine the order of Orders to fetch.
      */
-    orderBy?: TokenOrderByWithRelationInput | TokenOrderByWithRelationInput[]
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for Tokens.
+     * Sets the position for searching for Orders.
      */
-    cursor?: TokenWhereUniqueInput
+    cursor?: OrderWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Tokens from the position of the cursor.
+     * Take `±n` Orders from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Tokens.
+     * Skip the first `n` Orders.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of Tokens.
+     * Filter by unique combinations of Orders.
      */
-    distinct?: TokenScalarFieldEnum | TokenScalarFieldEnum[]
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
   }
 
   /**
-   * Token findMany
+   * Order findMany
    */
-  export type TokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter, which Tokens to fetch.
+     * Filter, which Orders to fetch.
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of Tokens to fetch.
+     * Determine the order of Orders to fetch.
      */
-    orderBy?: TokenOrderByWithRelationInput | TokenOrderByWithRelationInput[]
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for listing Tokens.
+     * Sets the position for listing Orders.
      */
-    cursor?: TokenWhereUniqueInput
+    cursor?: OrderWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` Tokens from the position of the cursor.
+     * Take `±n` Orders from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` Tokens.
+     * Skip the first `n` Orders.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of Tokens.
+     * Filter by unique combinations of Orders.
      */
-    distinct?: TokenScalarFieldEnum | TokenScalarFieldEnum[]
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
   }
 
   /**
-   * Token create
+   * Order create
    */
-  export type TokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * The data needed to create a Token.
+     * The data needed to create a Order.
      */
-    data: XOR<TokenCreateInput, TokenUncheckedCreateInput>
+    data: XOR<OrderCreateInput, OrderUncheckedCreateInput>
   }
 
   /**
-   * Token createMany
+   * Order createMany
    */
-  export type TokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to create many Tokens.
+     * The data used to create many Orders.
      */
-    data: TokenCreateManyInput | TokenCreateManyInput[]
+    data: OrderCreateManyInput | OrderCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * Token createManyAndReturn
+   * Order createManyAndReturn
    */
-  export type TokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelectCreateManyAndReturn<ExtArgs> | null
+    select?: OrderSelectCreateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
-     * The data used to create many Tokens.
+     * The data used to create many Orders.
      */
-    data: TokenCreateManyInput | TokenCreateManyInput[]
+    data: OrderCreateManyInput | OrderCreateManyInput[]
     skipDuplicates?: boolean
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenIncludeCreateManyAndReturn<ExtArgs> | null
+    include?: OrderIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
-   * Token update
+   * Order update
    */
-  export type TokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * The data needed to update a Token.
+     * The data needed to update a Order.
      */
-    data: XOR<TokenUpdateInput, TokenUncheckedUpdateInput>
+    data: XOR<OrderUpdateInput, OrderUncheckedUpdateInput>
     /**
-     * Choose, which Token to update.
+     * Choose, which Order to update.
      */
-    where: TokenWhereUniqueInput
+    where: OrderWhereUniqueInput
   }
 
   /**
-   * Token updateMany
+   * Order updateMany
    */
-  export type TokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to update Tokens.
+     * The data used to update Orders.
      */
-    data: XOR<TokenUpdateManyMutationInput, TokenUncheckedUpdateManyInput>
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyInput>
     /**
-     * Filter which Tokens to update
+     * Filter which Orders to update
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
-     * Limit how many Tokens to update.
+     * Limit how many Orders to update.
      */
     limit?: number
   }
 
   /**
-   * Token updateManyAndReturn
+   * Order updateManyAndReturn
    */
-  export type TokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelectUpdateManyAndReturn<ExtArgs> | null
+    select?: OrderSelectUpdateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
-     * The data used to update Tokens.
+     * The data used to update Orders.
      */
-    data: XOR<TokenUpdateManyMutationInput, TokenUncheckedUpdateManyInput>
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyInput>
     /**
-     * Filter which Tokens to update
+     * Filter which Orders to update
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
-     * Limit how many Tokens to update.
+     * Limit how many Orders to update.
      */
     limit?: number
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenIncludeUpdateManyAndReturn<ExtArgs> | null
+    include?: OrderIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
-   * Token upsert
+   * Order upsert
    */
-  export type TokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * The filter to search for the Token to update in case it exists.
+     * The filter to search for the Order to update in case it exists.
      */
-    where: TokenWhereUniqueInput
+    where: OrderWhereUniqueInput
     /**
-     * In case the Token found by the `where` argument doesn't exist, create a new Token with this data.
+     * In case the Order found by the `where` argument doesn't exist, create a new Order with this data.
      */
-    create: XOR<TokenCreateInput, TokenUncheckedCreateInput>
+    create: XOR<OrderCreateInput, OrderUncheckedCreateInput>
     /**
-     * In case the Token was found with the provided `where` argument, update it with this data.
+     * In case the Order was found with the provided `where` argument, update it with this data.
      */
-    update: XOR<TokenUpdateInput, TokenUncheckedUpdateInput>
+    update: XOR<OrderUpdateInput, OrderUncheckedUpdateInput>
   }
 
   /**
-   * Token delete
+   * Order delete
    */
-  export type TokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
     /**
-     * Filter which Token to delete.
+     * Filter which Order to delete.
      */
-    where: TokenWhereUniqueInput
+    where: OrderWhereUniqueInput
   }
 
   /**
-   * Token deleteMany
+   * Order deleteMany
    */
-  export type TokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which Tokens to delete
+     * Filter which Orders to delete
      */
-    where?: TokenWhereInput
+    where?: OrderWhereInput
     /**
-     * Limit how many Tokens to delete.
+     * Limit how many Orders to delete.
      */
     limit?: number
   }
 
   /**
-   * Token without action
+   * Order without action
    */
-  export type TokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Token
+     * Select specific fields to fetch from the Order
      */
-    select?: TokenSelect<ExtArgs> | null
+    select?: OrderSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Token
+     * Omit specific fields from the Order
      */
-    omit?: TokenOmit<ExtArgs> | null
+    omit?: OrderOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: TokenInclude<ExtArgs> | null
+    include?: OrderInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model MatchExecution
+   */
+
+  export type AggregateMatchExecution = {
+    _count: MatchExecutionCountAggregateOutputType | null
+    _avg: MatchExecutionAvgAggregateOutputType | null
+    _sum: MatchExecutionSumAggregateOutputType | null
+    _min: MatchExecutionMinAggregateOutputType | null
+    _max: MatchExecutionMaxAggregateOutputType | null
+  }
+
+  export type MatchExecutionAvgAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+  }
+
+  export type MatchExecutionSumAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+  }
+
+  export type MatchExecutionMinAggregateOutputType = {
+    matchId: string | null
+    buyOrderId: string | null
+    sellOrderId: string | null
+    symbol: string | null
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+    buyerId: string | null
+    sellerId: string | null
+    isBuyerMaker: boolean | null
+    status: $Enums.SettlementStatus | null
+    settledAt: Date | null
+  }
+
+  export type MatchExecutionMaxAggregateOutputType = {
+    matchId: string | null
+    buyOrderId: string | null
+    sellOrderId: string | null
+    symbol: string | null
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+    buyerId: string | null
+    sellerId: string | null
+    isBuyerMaker: boolean | null
+    status: $Enums.SettlementStatus | null
+    settledAt: Date | null
+  }
+
+  export type MatchExecutionCountAggregateOutputType = {
+    matchId: number
+    buyOrderId: number
+    sellOrderId: number
+    symbol: number
+    price: number
+    quantity: number
+    quoteQuantity: number
+    buyerId: number
+    sellerId: number
+    isBuyerMaker: number
+    status: number
+    settledAt: number
+    _all: number
+  }
+
+
+  export type MatchExecutionAvgAggregateInputType = {
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+  }
+
+  export type MatchExecutionSumAggregateInputType = {
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+  }
+
+  export type MatchExecutionMinAggregateInputType = {
+    matchId?: true
+    buyOrderId?: true
+    sellOrderId?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    buyerId?: true
+    sellerId?: true
+    isBuyerMaker?: true
+    status?: true
+    settledAt?: true
+  }
+
+  export type MatchExecutionMaxAggregateInputType = {
+    matchId?: true
+    buyOrderId?: true
+    sellOrderId?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    buyerId?: true
+    sellerId?: true
+    isBuyerMaker?: true
+    status?: true
+    settledAt?: true
+  }
+
+  export type MatchExecutionCountAggregateInputType = {
+    matchId?: true
+    buyOrderId?: true
+    sellOrderId?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    buyerId?: true
+    sellerId?: true
+    isBuyerMaker?: true
+    status?: true
+    settledAt?: true
+    _all?: true
+  }
+
+  export type MatchExecutionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MatchExecution to aggregate.
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchExecutions to fetch.
+     */
+    orderBy?: MatchExecutionOrderByWithRelationInput | MatchExecutionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: MatchExecutionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchExecutions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchExecutions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned MatchExecutions
+    **/
+    _count?: true | MatchExecutionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: MatchExecutionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: MatchExecutionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: MatchExecutionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: MatchExecutionMaxAggregateInputType
+  }
+
+  export type GetMatchExecutionAggregateType<T extends MatchExecutionAggregateArgs> = {
+        [P in keyof T & keyof AggregateMatchExecution]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateMatchExecution[P]>
+      : GetScalarType<T[P], AggregateMatchExecution[P]>
+  }
+
+
+
+
+  export type MatchExecutionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MatchExecutionWhereInput
+    orderBy?: MatchExecutionOrderByWithAggregationInput | MatchExecutionOrderByWithAggregationInput[]
+    by: MatchExecutionScalarFieldEnum[] | MatchExecutionScalarFieldEnum
+    having?: MatchExecutionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: MatchExecutionCountAggregateInputType | true
+    _avg?: MatchExecutionAvgAggregateInputType
+    _sum?: MatchExecutionSumAggregateInputType
+    _min?: MatchExecutionMinAggregateInputType
+    _max?: MatchExecutionMaxAggregateInputType
+  }
+
+  export type MatchExecutionGroupByOutputType = {
+    matchId: string
+    buyOrderId: string
+    sellOrderId: string
+    symbol: string
+    price: Decimal
+    quantity: Decimal
+    quoteQuantity: Decimal
+    buyerId: string
+    sellerId: string
+    isBuyerMaker: boolean
+    status: $Enums.SettlementStatus
+    settledAt: Date
+    _count: MatchExecutionCountAggregateOutputType | null
+    _avg: MatchExecutionAvgAggregateOutputType | null
+    _sum: MatchExecutionSumAggregateOutputType | null
+    _min: MatchExecutionMinAggregateOutputType | null
+    _max: MatchExecutionMaxAggregateOutputType | null
+  }
+
+  type GetMatchExecutionGroupByPayload<T extends MatchExecutionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<MatchExecutionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof MatchExecutionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MatchExecutionGroupByOutputType[P]>
+            : GetScalarType<T[P], MatchExecutionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type MatchExecutionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    matchId?: boolean
+    buyOrderId?: boolean
+    sellOrderId?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    buyerId?: boolean
+    sellerId?: boolean
+    isBuyerMaker?: boolean
+    status?: boolean
+    settledAt?: boolean
+  }, ExtArgs["result"]["matchExecution"]>
+
+  export type MatchExecutionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    matchId?: boolean
+    buyOrderId?: boolean
+    sellOrderId?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    buyerId?: boolean
+    sellerId?: boolean
+    isBuyerMaker?: boolean
+    status?: boolean
+    settledAt?: boolean
+  }, ExtArgs["result"]["matchExecution"]>
+
+  export type MatchExecutionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    matchId?: boolean
+    buyOrderId?: boolean
+    sellOrderId?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    buyerId?: boolean
+    sellerId?: boolean
+    isBuyerMaker?: boolean
+    status?: boolean
+    settledAt?: boolean
+  }, ExtArgs["result"]["matchExecution"]>
+
+  export type MatchExecutionSelectScalar = {
+    matchId?: boolean
+    buyOrderId?: boolean
+    sellOrderId?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    buyerId?: boolean
+    sellerId?: boolean
+    isBuyerMaker?: boolean
+    status?: boolean
+    settledAt?: boolean
+  }
+
+  export type MatchExecutionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"matchId" | "buyOrderId" | "sellOrderId" | "symbol" | "price" | "quantity" | "quoteQuantity" | "buyerId" | "sellerId" | "isBuyerMaker" | "status" | "settledAt", ExtArgs["result"]["matchExecution"]>
+
+  export type $MatchExecutionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "MatchExecution"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      matchId: string
+      buyOrderId: string
+      sellOrderId: string
+      symbol: string
+      price: Prisma.Decimal
+      quantity: Prisma.Decimal
+      quoteQuantity: Prisma.Decimal
+      buyerId: string
+      sellerId: string
+      isBuyerMaker: boolean
+      status: $Enums.SettlementStatus
+      settledAt: Date
+    }, ExtArgs["result"]["matchExecution"]>
+    composites: {}
+  }
+
+  type MatchExecutionGetPayload<S extends boolean | null | undefined | MatchExecutionDefaultArgs> = $Result.GetResult<Prisma.$MatchExecutionPayload, S>
+
+  type MatchExecutionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<MatchExecutionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: MatchExecutionCountAggregateInputType | true
+    }
+
+  export interface MatchExecutionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['MatchExecution'], meta: { name: 'MatchExecution' } }
+    /**
+     * Find zero or one MatchExecution that matches the filter.
+     * @param {MatchExecutionFindUniqueArgs} args - Arguments to find a MatchExecution
+     * @example
+     * // Get one MatchExecution
+     * const matchExecution = await prisma.matchExecution.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends MatchExecutionFindUniqueArgs>(args: SelectSubset<T, MatchExecutionFindUniqueArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one MatchExecution that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {MatchExecutionFindUniqueOrThrowArgs} args - Arguments to find a MatchExecution
+     * @example
+     * // Get one MatchExecution
+     * const matchExecution = await prisma.matchExecution.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends MatchExecutionFindUniqueOrThrowArgs>(args: SelectSubset<T, MatchExecutionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MatchExecution that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionFindFirstArgs} args - Arguments to find a MatchExecution
+     * @example
+     * // Get one MatchExecution
+     * const matchExecution = await prisma.matchExecution.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends MatchExecutionFindFirstArgs>(args?: SelectSubset<T, MatchExecutionFindFirstArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MatchExecution that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionFindFirstOrThrowArgs} args - Arguments to find a MatchExecution
+     * @example
+     * // Get one MatchExecution
+     * const matchExecution = await prisma.matchExecution.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends MatchExecutionFindFirstOrThrowArgs>(args?: SelectSubset<T, MatchExecutionFindFirstOrThrowArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more MatchExecutions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all MatchExecutions
+     * const matchExecutions = await prisma.matchExecution.findMany()
+     * 
+     * // Get first 10 MatchExecutions
+     * const matchExecutions = await prisma.matchExecution.findMany({ take: 10 })
+     * 
+     * // Only select the `matchId`
+     * const matchExecutionWithMatchIdOnly = await prisma.matchExecution.findMany({ select: { matchId: true } })
+     * 
+     */
+    findMany<T extends MatchExecutionFindManyArgs>(args?: SelectSubset<T, MatchExecutionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a MatchExecution.
+     * @param {MatchExecutionCreateArgs} args - Arguments to create a MatchExecution.
+     * @example
+     * // Create one MatchExecution
+     * const MatchExecution = await prisma.matchExecution.create({
+     *   data: {
+     *     // ... data to create a MatchExecution
+     *   }
+     * })
+     * 
+     */
+    create<T extends MatchExecutionCreateArgs>(args: SelectSubset<T, MatchExecutionCreateArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many MatchExecutions.
+     * @param {MatchExecutionCreateManyArgs} args - Arguments to create many MatchExecutions.
+     * @example
+     * // Create many MatchExecutions
+     * const matchExecution = await prisma.matchExecution.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends MatchExecutionCreateManyArgs>(args?: SelectSubset<T, MatchExecutionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many MatchExecutions and returns the data saved in the database.
+     * @param {MatchExecutionCreateManyAndReturnArgs} args - Arguments to create many MatchExecutions.
+     * @example
+     * // Create many MatchExecutions
+     * const matchExecution = await prisma.matchExecution.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many MatchExecutions and only return the `matchId`
+     * const matchExecutionWithMatchIdOnly = await prisma.matchExecution.createManyAndReturn({
+     *   select: { matchId: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends MatchExecutionCreateManyAndReturnArgs>(args?: SelectSubset<T, MatchExecutionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a MatchExecution.
+     * @param {MatchExecutionDeleteArgs} args - Arguments to delete one MatchExecution.
+     * @example
+     * // Delete one MatchExecution
+     * const MatchExecution = await prisma.matchExecution.delete({
+     *   where: {
+     *     // ... filter to delete one MatchExecution
+     *   }
+     * })
+     * 
+     */
+    delete<T extends MatchExecutionDeleteArgs>(args: SelectSubset<T, MatchExecutionDeleteArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one MatchExecution.
+     * @param {MatchExecutionUpdateArgs} args - Arguments to update one MatchExecution.
+     * @example
+     * // Update one MatchExecution
+     * const matchExecution = await prisma.matchExecution.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends MatchExecutionUpdateArgs>(args: SelectSubset<T, MatchExecutionUpdateArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more MatchExecutions.
+     * @param {MatchExecutionDeleteManyArgs} args - Arguments to filter MatchExecutions to delete.
+     * @example
+     * // Delete a few MatchExecutions
+     * const { count } = await prisma.matchExecution.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends MatchExecutionDeleteManyArgs>(args?: SelectSubset<T, MatchExecutionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MatchExecutions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many MatchExecutions
+     * const matchExecution = await prisma.matchExecution.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends MatchExecutionUpdateManyArgs>(args: SelectSubset<T, MatchExecutionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MatchExecutions and returns the data updated in the database.
+     * @param {MatchExecutionUpdateManyAndReturnArgs} args - Arguments to update many MatchExecutions.
+     * @example
+     * // Update many MatchExecutions
+     * const matchExecution = await prisma.matchExecution.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more MatchExecutions and only return the `matchId`
+     * const matchExecutionWithMatchIdOnly = await prisma.matchExecution.updateManyAndReturn({
+     *   select: { matchId: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends MatchExecutionUpdateManyAndReturnArgs>(args: SelectSubset<T, MatchExecutionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one MatchExecution.
+     * @param {MatchExecutionUpsertArgs} args - Arguments to update or create a MatchExecution.
+     * @example
+     * // Update or create a MatchExecution
+     * const matchExecution = await prisma.matchExecution.upsert({
+     *   create: {
+     *     // ... data to create a MatchExecution
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the MatchExecution we want to update
+     *   }
+     * })
+     */
+    upsert<T extends MatchExecutionUpsertArgs>(args: SelectSubset<T, MatchExecutionUpsertArgs<ExtArgs>>): Prisma__MatchExecutionClient<$Result.GetResult<Prisma.$MatchExecutionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of MatchExecutions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionCountArgs} args - Arguments to filter MatchExecutions to count.
+     * @example
+     * // Count the number of MatchExecutions
+     * const count = await prisma.matchExecution.count({
+     *   where: {
+     *     // ... the filter for the MatchExecutions we want to count
+     *   }
+     * })
+    **/
+    count<T extends MatchExecutionCountArgs>(
+      args?: Subset<T, MatchExecutionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], MatchExecutionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a MatchExecution.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends MatchExecutionAggregateArgs>(args: Subset<T, MatchExecutionAggregateArgs>): Prisma.PrismaPromise<GetMatchExecutionAggregateType<T>>
+
+    /**
+     * Group by MatchExecution.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchExecutionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends MatchExecutionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: MatchExecutionGroupByArgs['orderBy'] }
+        : { orderBy?: MatchExecutionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, MatchExecutionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMatchExecutionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the MatchExecution model
+   */
+  readonly fields: MatchExecutionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for MatchExecution.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__MatchExecutionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the MatchExecution model
+   */
+  interface MatchExecutionFieldRefs {
+    readonly matchId: FieldRef<"MatchExecution", 'String'>
+    readonly buyOrderId: FieldRef<"MatchExecution", 'String'>
+    readonly sellOrderId: FieldRef<"MatchExecution", 'String'>
+    readonly symbol: FieldRef<"MatchExecution", 'String'>
+    readonly price: FieldRef<"MatchExecution", 'Decimal'>
+    readonly quantity: FieldRef<"MatchExecution", 'Decimal'>
+    readonly quoteQuantity: FieldRef<"MatchExecution", 'Decimal'>
+    readonly buyerId: FieldRef<"MatchExecution", 'String'>
+    readonly sellerId: FieldRef<"MatchExecution", 'String'>
+    readonly isBuyerMaker: FieldRef<"MatchExecution", 'Boolean'>
+    readonly status: FieldRef<"MatchExecution", 'SettlementStatus'>
+    readonly settledAt: FieldRef<"MatchExecution", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * MatchExecution findUnique
+   */
+  export type MatchExecutionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter, which MatchExecution to fetch.
+     */
+    where: MatchExecutionWhereUniqueInput
+  }
+
+  /**
+   * MatchExecution findUniqueOrThrow
+   */
+  export type MatchExecutionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter, which MatchExecution to fetch.
+     */
+    where: MatchExecutionWhereUniqueInput
+  }
+
+  /**
+   * MatchExecution findFirst
+   */
+  export type MatchExecutionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter, which MatchExecution to fetch.
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchExecutions to fetch.
+     */
+    orderBy?: MatchExecutionOrderByWithRelationInput | MatchExecutionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MatchExecutions.
+     */
+    cursor?: MatchExecutionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchExecutions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchExecutions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MatchExecutions.
+     */
+    distinct?: MatchExecutionScalarFieldEnum | MatchExecutionScalarFieldEnum[]
+  }
+
+  /**
+   * MatchExecution findFirstOrThrow
+   */
+  export type MatchExecutionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter, which MatchExecution to fetch.
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchExecutions to fetch.
+     */
+    orderBy?: MatchExecutionOrderByWithRelationInput | MatchExecutionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MatchExecutions.
+     */
+    cursor?: MatchExecutionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchExecutions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchExecutions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MatchExecutions.
+     */
+    distinct?: MatchExecutionScalarFieldEnum | MatchExecutionScalarFieldEnum[]
+  }
+
+  /**
+   * MatchExecution findMany
+   */
+  export type MatchExecutionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter, which MatchExecutions to fetch.
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchExecutions to fetch.
+     */
+    orderBy?: MatchExecutionOrderByWithRelationInput | MatchExecutionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing MatchExecutions.
+     */
+    cursor?: MatchExecutionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchExecutions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchExecutions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MatchExecutions.
+     */
+    distinct?: MatchExecutionScalarFieldEnum | MatchExecutionScalarFieldEnum[]
+  }
+
+  /**
+   * MatchExecution create
+   */
+  export type MatchExecutionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * The data needed to create a MatchExecution.
+     */
+    data: XOR<MatchExecutionCreateInput, MatchExecutionUncheckedCreateInput>
+  }
+
+  /**
+   * MatchExecution createMany
+   */
+  export type MatchExecutionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many MatchExecutions.
+     */
+    data: MatchExecutionCreateManyInput | MatchExecutionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * MatchExecution createManyAndReturn
+   */
+  export type MatchExecutionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * The data used to create many MatchExecutions.
+     */
+    data: MatchExecutionCreateManyInput | MatchExecutionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * MatchExecution update
+   */
+  export type MatchExecutionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * The data needed to update a MatchExecution.
+     */
+    data: XOR<MatchExecutionUpdateInput, MatchExecutionUncheckedUpdateInput>
+    /**
+     * Choose, which MatchExecution to update.
+     */
+    where: MatchExecutionWhereUniqueInput
+  }
+
+  /**
+   * MatchExecution updateMany
+   */
+  export type MatchExecutionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update MatchExecutions.
+     */
+    data: XOR<MatchExecutionUpdateManyMutationInput, MatchExecutionUncheckedUpdateManyInput>
+    /**
+     * Filter which MatchExecutions to update
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * Limit how many MatchExecutions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * MatchExecution updateManyAndReturn
+   */
+  export type MatchExecutionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * The data used to update MatchExecutions.
+     */
+    data: XOR<MatchExecutionUpdateManyMutationInput, MatchExecutionUncheckedUpdateManyInput>
+    /**
+     * Filter which MatchExecutions to update
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * Limit how many MatchExecutions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * MatchExecution upsert
+   */
+  export type MatchExecutionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * The filter to search for the MatchExecution to update in case it exists.
+     */
+    where: MatchExecutionWhereUniqueInput
+    /**
+     * In case the MatchExecution found by the `where` argument doesn't exist, create a new MatchExecution with this data.
+     */
+    create: XOR<MatchExecutionCreateInput, MatchExecutionUncheckedCreateInput>
+    /**
+     * In case the MatchExecution was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<MatchExecutionUpdateInput, MatchExecutionUncheckedUpdateInput>
+  }
+
+  /**
+   * MatchExecution delete
+   */
+  export type MatchExecutionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+    /**
+     * Filter which MatchExecution to delete.
+     */
+    where: MatchExecutionWhereUniqueInput
+  }
+
+  /**
+   * MatchExecution deleteMany
+   */
+  export type MatchExecutionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MatchExecutions to delete
+     */
+    where?: MatchExecutionWhereInput
+    /**
+     * Limit how many MatchExecutions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * MatchExecution without action
+   */
+  export type MatchExecutionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchExecution
+     */
+    select?: MatchExecutionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchExecution
+     */
+    omit?: MatchExecutionOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Trade
+   */
+
+  export type AggregateTrade = {
+    _count: TradeCountAggregateOutputType | null
+    _avg: TradeAvgAggregateOutputType | null
+    _sum: TradeSumAggregateOutputType | null
+    _min: TradeMinAggregateOutputType | null
+    _max: TradeMaxAggregateOutputType | null
+  }
+
+  export type TradeAvgAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+  }
+
+  export type TradeSumAggregateOutputType = {
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+  }
+
+  export type TradeMinAggregateOutputType = {
+    id: string | null
+    symbol: string | null
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+    isBuyerMaker: boolean | null
+    timestamp: Date | null
+  }
+
+  export type TradeMaxAggregateOutputType = {
+    id: string | null
+    symbol: string | null
+    price: Decimal | null
+    quantity: Decimal | null
+    quoteQuantity: Decimal | null
+    isBuyerMaker: boolean | null
+    timestamp: Date | null
+  }
+
+  export type TradeCountAggregateOutputType = {
+    id: number
+    symbol: number
+    price: number
+    quantity: number
+    quoteQuantity: number
+    isBuyerMaker: number
+    timestamp: number
+    _all: number
+  }
+
+
+  export type TradeAvgAggregateInputType = {
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+  }
+
+  export type TradeSumAggregateInputType = {
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+  }
+
+  export type TradeMinAggregateInputType = {
+    id?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    isBuyerMaker?: true
+    timestamp?: true
+  }
+
+  export type TradeMaxAggregateInputType = {
+    id?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    isBuyerMaker?: true
+    timestamp?: true
+  }
+
+  export type TradeCountAggregateInputType = {
+    id?: true
+    symbol?: true
+    price?: true
+    quantity?: true
+    quoteQuantity?: true
+    isBuyerMaker?: true
+    timestamp?: true
+    _all?: true
+  }
+
+  export type TradeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Trade to aggregate.
+     */
+    where?: TradeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Trades to fetch.
+     */
+    orderBy?: TradeOrderByWithRelationInput | TradeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: TradeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Trades from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Trades.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Trades
+    **/
+    _count?: true | TradeCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: TradeAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: TradeSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: TradeMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: TradeMaxAggregateInputType
+  }
+
+  export type GetTradeAggregateType<T extends TradeAggregateArgs> = {
+        [P in keyof T & keyof AggregateTrade]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTrade[P]>
+      : GetScalarType<T[P], AggregateTrade[P]>
+  }
+
+
+
+
+  export type TradeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TradeWhereInput
+    orderBy?: TradeOrderByWithAggregationInput | TradeOrderByWithAggregationInput[]
+    by: TradeScalarFieldEnum[] | TradeScalarFieldEnum
+    having?: TradeScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: TradeCountAggregateInputType | true
+    _avg?: TradeAvgAggregateInputType
+    _sum?: TradeSumAggregateInputType
+    _min?: TradeMinAggregateInputType
+    _max?: TradeMaxAggregateInputType
+  }
+
+  export type TradeGroupByOutputType = {
+    id: string
+    symbol: string
+    price: Decimal
+    quantity: Decimal
+    quoteQuantity: Decimal
+    isBuyerMaker: boolean
+    timestamp: Date
+    _count: TradeCountAggregateOutputType | null
+    _avg: TradeAvgAggregateOutputType | null
+    _sum: TradeSumAggregateOutputType | null
+    _min: TradeMinAggregateOutputType | null
+    _max: TradeMaxAggregateOutputType | null
+  }
+
+  type GetTradeGroupByPayload<T extends TradeGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<TradeGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof TradeGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], TradeGroupByOutputType[P]>
+            : GetScalarType<T[P], TradeGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type TradeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    isBuyerMaker?: boolean
+    timestamp?: boolean
+  }, ExtArgs["result"]["trade"]>
+
+  export type TradeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    isBuyerMaker?: boolean
+    timestamp?: boolean
+  }, ExtArgs["result"]["trade"]>
+
+  export type TradeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    isBuyerMaker?: boolean
+    timestamp?: boolean
+  }, ExtArgs["result"]["trade"]>
+
+  export type TradeSelectScalar = {
+    id?: boolean
+    symbol?: boolean
+    price?: boolean
+    quantity?: boolean
+    quoteQuantity?: boolean
+    isBuyerMaker?: boolean
+    timestamp?: boolean
+  }
+
+  export type TradeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "symbol" | "price" | "quantity" | "quoteQuantity" | "isBuyerMaker" | "timestamp", ExtArgs["result"]["trade"]>
+
+  export type $TradePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Trade"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      symbol: string
+      price: Prisma.Decimal
+      quantity: Prisma.Decimal
+      quoteQuantity: Prisma.Decimal
+      isBuyerMaker: boolean
+      timestamp: Date
+    }, ExtArgs["result"]["trade"]>
+    composites: {}
+  }
+
+  type TradeGetPayload<S extends boolean | null | undefined | TradeDefaultArgs> = $Result.GetResult<Prisma.$TradePayload, S>
+
+  type TradeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<TradeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: TradeCountAggregateInputType | true
+    }
+
+  export interface TradeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Trade'], meta: { name: 'Trade' } }
+    /**
+     * Find zero or one Trade that matches the filter.
+     * @param {TradeFindUniqueArgs} args - Arguments to find a Trade
+     * @example
+     * // Get one Trade
+     * const trade = await prisma.trade.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TradeFindUniqueArgs>(args: SelectSubset<T, TradeFindUniqueArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Trade that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {TradeFindUniqueOrThrowArgs} args - Arguments to find a Trade
+     * @example
+     * // Get one Trade
+     * const trade = await prisma.trade.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TradeFindUniqueOrThrowArgs>(args: SelectSubset<T, TradeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Trade that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeFindFirstArgs} args - Arguments to find a Trade
+     * @example
+     * // Get one Trade
+     * const trade = await prisma.trade.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TradeFindFirstArgs>(args?: SelectSubset<T, TradeFindFirstArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Trade that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeFindFirstOrThrowArgs} args - Arguments to find a Trade
+     * @example
+     * // Get one Trade
+     * const trade = await prisma.trade.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TradeFindFirstOrThrowArgs>(args?: SelectSubset<T, TradeFindFirstOrThrowArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Trades that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Trades
+     * const trades = await prisma.trade.findMany()
+     * 
+     * // Get first 10 Trades
+     * const trades = await prisma.trade.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tradeWithIdOnly = await prisma.trade.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends TradeFindManyArgs>(args?: SelectSubset<T, TradeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Trade.
+     * @param {TradeCreateArgs} args - Arguments to create a Trade.
+     * @example
+     * // Create one Trade
+     * const Trade = await prisma.trade.create({
+     *   data: {
+     *     // ... data to create a Trade
+     *   }
+     * })
+     * 
+     */
+    create<T extends TradeCreateArgs>(args: SelectSubset<T, TradeCreateArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Trades.
+     * @param {TradeCreateManyArgs} args - Arguments to create many Trades.
+     * @example
+     * // Create many Trades
+     * const trade = await prisma.trade.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends TradeCreateManyArgs>(args?: SelectSubset<T, TradeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Trades and returns the data saved in the database.
+     * @param {TradeCreateManyAndReturnArgs} args - Arguments to create many Trades.
+     * @example
+     * // Create many Trades
+     * const trade = await prisma.trade.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Trades and only return the `id`
+     * const tradeWithIdOnly = await prisma.trade.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends TradeCreateManyAndReturnArgs>(args?: SelectSubset<T, TradeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Trade.
+     * @param {TradeDeleteArgs} args - Arguments to delete one Trade.
+     * @example
+     * // Delete one Trade
+     * const Trade = await prisma.trade.delete({
+     *   where: {
+     *     // ... filter to delete one Trade
+     *   }
+     * })
+     * 
+     */
+    delete<T extends TradeDeleteArgs>(args: SelectSubset<T, TradeDeleteArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Trade.
+     * @param {TradeUpdateArgs} args - Arguments to update one Trade.
+     * @example
+     * // Update one Trade
+     * const trade = await prisma.trade.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends TradeUpdateArgs>(args: SelectSubset<T, TradeUpdateArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Trades.
+     * @param {TradeDeleteManyArgs} args - Arguments to filter Trades to delete.
+     * @example
+     * // Delete a few Trades
+     * const { count } = await prisma.trade.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends TradeDeleteManyArgs>(args?: SelectSubset<T, TradeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Trades.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Trades
+     * const trade = await prisma.trade.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends TradeUpdateManyArgs>(args: SelectSubset<T, TradeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Trades and returns the data updated in the database.
+     * @param {TradeUpdateManyAndReturnArgs} args - Arguments to update many Trades.
+     * @example
+     * // Update many Trades
+     * const trade = await prisma.trade.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Trades and only return the `id`
+     * const tradeWithIdOnly = await prisma.trade.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends TradeUpdateManyAndReturnArgs>(args: SelectSubset<T, TradeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Trade.
+     * @param {TradeUpsertArgs} args - Arguments to update or create a Trade.
+     * @example
+     * // Update or create a Trade
+     * const trade = await prisma.trade.upsert({
+     *   create: {
+     *     // ... data to create a Trade
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Trade we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TradeUpsertArgs>(args: SelectSubset<T, TradeUpsertArgs<ExtArgs>>): Prisma__TradeClient<$Result.GetResult<Prisma.$TradePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Trades.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeCountArgs} args - Arguments to filter Trades to count.
+     * @example
+     * // Count the number of Trades
+     * const count = await prisma.trade.count({
+     *   where: {
+     *     // ... the filter for the Trades we want to count
+     *   }
+     * })
+    **/
+    count<T extends TradeCountArgs>(
+      args?: Subset<T, TradeCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], TradeCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Trade.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TradeAggregateArgs>(args: Subset<T, TradeAggregateArgs>): Prisma.PrismaPromise<GetTradeAggregateType<T>>
+
+    /**
+     * Group by Trade.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TradeGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends TradeGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: TradeGroupByArgs['orderBy'] }
+        : { orderBy?: TradeGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, TradeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTradeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Trade model
+   */
+  readonly fields: TradeFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Trade.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__TradeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Trade model
+   */
+  interface TradeFieldRefs {
+    readonly id: FieldRef<"Trade", 'String'>
+    readonly symbol: FieldRef<"Trade", 'String'>
+    readonly price: FieldRef<"Trade", 'Decimal'>
+    readonly quantity: FieldRef<"Trade", 'Decimal'>
+    readonly quoteQuantity: FieldRef<"Trade", 'Decimal'>
+    readonly isBuyerMaker: FieldRef<"Trade", 'Boolean'>
+    readonly timestamp: FieldRef<"Trade", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Trade findUnique
+   */
+  export type TradeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter, which Trade to fetch.
+     */
+    where: TradeWhereUniqueInput
+  }
+
+  /**
+   * Trade findUniqueOrThrow
+   */
+  export type TradeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter, which Trade to fetch.
+     */
+    where: TradeWhereUniqueInput
+  }
+
+  /**
+   * Trade findFirst
+   */
+  export type TradeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter, which Trade to fetch.
+     */
+    where?: TradeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Trades to fetch.
+     */
+    orderBy?: TradeOrderByWithRelationInput | TradeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Trades.
+     */
+    cursor?: TradeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Trades from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Trades.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Trades.
+     */
+    distinct?: TradeScalarFieldEnum | TradeScalarFieldEnum[]
+  }
+
+  /**
+   * Trade findFirstOrThrow
+   */
+  export type TradeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter, which Trade to fetch.
+     */
+    where?: TradeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Trades to fetch.
+     */
+    orderBy?: TradeOrderByWithRelationInput | TradeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Trades.
+     */
+    cursor?: TradeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Trades from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Trades.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Trades.
+     */
+    distinct?: TradeScalarFieldEnum | TradeScalarFieldEnum[]
+  }
+
+  /**
+   * Trade findMany
+   */
+  export type TradeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter, which Trades to fetch.
+     */
+    where?: TradeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Trades to fetch.
+     */
+    orderBy?: TradeOrderByWithRelationInput | TradeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Trades.
+     */
+    cursor?: TradeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Trades from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Trades.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Trades.
+     */
+    distinct?: TradeScalarFieldEnum | TradeScalarFieldEnum[]
+  }
+
+  /**
+   * Trade create
+   */
+  export type TradeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * The data needed to create a Trade.
+     */
+    data: XOR<TradeCreateInput, TradeUncheckedCreateInput>
+  }
+
+  /**
+   * Trade createMany
+   */
+  export type TradeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Trades.
+     */
+    data: TradeCreateManyInput | TradeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Trade createManyAndReturn
+   */
+  export type TradeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * The data used to create many Trades.
+     */
+    data: TradeCreateManyInput | TradeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Trade update
+   */
+  export type TradeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * The data needed to update a Trade.
+     */
+    data: XOR<TradeUpdateInput, TradeUncheckedUpdateInput>
+    /**
+     * Choose, which Trade to update.
+     */
+    where: TradeWhereUniqueInput
+  }
+
+  /**
+   * Trade updateMany
+   */
+  export type TradeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Trades.
+     */
+    data: XOR<TradeUpdateManyMutationInput, TradeUncheckedUpdateManyInput>
+    /**
+     * Filter which Trades to update
+     */
+    where?: TradeWhereInput
+    /**
+     * Limit how many Trades to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Trade updateManyAndReturn
+   */
+  export type TradeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * The data used to update Trades.
+     */
+    data: XOR<TradeUpdateManyMutationInput, TradeUncheckedUpdateManyInput>
+    /**
+     * Filter which Trades to update
+     */
+    where?: TradeWhereInput
+    /**
+     * Limit how many Trades to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Trade upsert
+   */
+  export type TradeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * The filter to search for the Trade to update in case it exists.
+     */
+    where: TradeWhereUniqueInput
+    /**
+     * In case the Trade found by the `where` argument doesn't exist, create a new Trade with this data.
+     */
+    create: XOR<TradeCreateInput, TradeUncheckedCreateInput>
+    /**
+     * In case the Trade was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<TradeUpdateInput, TradeUncheckedUpdateInput>
+  }
+
+  /**
+   * Trade delete
+   */
+  export type TradeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
+    /**
+     * Filter which Trade to delete.
+     */
+    where: TradeWhereUniqueInput
+  }
+
+  /**
+   * Trade deleteMany
+   */
+  export type TradeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Trades to delete
+     */
+    where?: TradeWhereInput
+    /**
+     * Limit how many Trades to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Trade without action
+   */
+  export type TradeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Trade
+     */
+    select?: TradeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Trade
+     */
+    omit?: TradeOmit<ExtArgs> | null
   }
 
 
@@ -5948,14 +9726,14 @@ export namespace Prisma {
   export type TransactionAvgAggregateOutputType = {
     amount: Decimal | null
     balanceAfter: Decimal | null
-    quantity: number | null
+    quantity: Decimal | null
     price: Decimal | null
   }
 
   export type TransactionSumAggregateOutputType = {
     amount: Decimal | null
     balanceAfter: Decimal | null
-    quantity: number | null
+    quantity: Decimal | null
     price: Decimal | null
   }
 
@@ -5968,10 +9746,8 @@ export namespace Prisma {
     amount: Decimal | null
     balanceAfter: Decimal | null
     ticker: string | null
-    quantity: number | null
+    quantity: Decimal | null
     price: Decimal | null
-    fromWalletId: string | null
-    toWalletId: string | null
     createdAt: Date | null
   }
 
@@ -5984,10 +9760,8 @@ export namespace Prisma {
     amount: Decimal | null
     balanceAfter: Decimal | null
     ticker: string | null
-    quantity: number | null
+    quantity: Decimal | null
     price: Decimal | null
-    fromWalletId: string | null
-    toWalletId: string | null
     createdAt: Date | null
   }
 
@@ -6002,8 +9776,6 @@ export namespace Prisma {
     ticker: number
     quantity: number
     price: number
-    fromWalletId: number
-    toWalletId: number
     createdAt: number
     _all: number
   }
@@ -6034,8 +9806,6 @@ export namespace Prisma {
     ticker?: true
     quantity?: true
     price?: true
-    fromWalletId?: true
-    toWalletId?: true
     createdAt?: true
   }
 
@@ -6050,8 +9820,6 @@ export namespace Prisma {
     ticker?: true
     quantity?: true
     price?: true
-    fromWalletId?: true
-    toWalletId?: true
     createdAt?: true
   }
 
@@ -6066,8 +9834,6 @@ export namespace Prisma {
     ticker?: true
     quantity?: true
     price?: true
-    fromWalletId?: true
-    toWalletId?: true
     createdAt?: true
     _all?: true
   }
@@ -6167,10 +9933,8 @@ export namespace Prisma {
     amount: Decimal
     balanceAfter: Decimal
     ticker: string | null
-    quantity: number | null
+    quantity: Decimal | null
     price: Decimal | null
-    fromWalletId: string | null
-    toWalletId: string | null
     createdAt: Date
     _count: TransactionCountAggregateOutputType | null
     _avg: TransactionAvgAggregateOutputType | null
@@ -6204,8 +9968,6 @@ export namespace Prisma {
     ticker?: boolean
     quantity?: boolean
     price?: boolean
-    fromWalletId?: boolean
-    toWalletId?: boolean
     createdAt?: boolean
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transaction"]>
@@ -6221,8 +9983,6 @@ export namespace Prisma {
     ticker?: boolean
     quantity?: boolean
     price?: boolean
-    fromWalletId?: boolean
-    toWalletId?: boolean
     createdAt?: boolean
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transaction"]>
@@ -6238,8 +9998,6 @@ export namespace Prisma {
     ticker?: boolean
     quantity?: boolean
     price?: boolean
-    fromWalletId?: boolean
-    toWalletId?: boolean
     createdAt?: boolean
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["transaction"]>
@@ -6255,12 +10013,10 @@ export namespace Prisma {
     ticker?: boolean
     quantity?: boolean
     price?: boolean
-    fromWalletId?: boolean
-    toWalletId?: boolean
     createdAt?: boolean
   }
 
-  export type TransactionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "type" | "category" | "description" | "amount" | "balanceAfter" | "ticker" | "quantity" | "price" | "fromWalletId" | "toWalletId" | "createdAt", ExtArgs["result"]["transaction"]>
+  export type TransactionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "type" | "category" | "description" | "amount" | "balanceAfter" | "ticker" | "quantity" | "price" | "createdAt", ExtArgs["result"]["transaction"]>
   export type TransactionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
   }
@@ -6285,10 +10041,8 @@ export namespace Prisma {
       amount: Prisma.Decimal
       balanceAfter: Prisma.Decimal
       ticker: string | null
-      quantity: number | null
+      quantity: Prisma.Decimal | null
       price: Prisma.Decimal | null
-      fromWalletId: string | null
-      toWalletId: string | null
       createdAt: Date
     }, ExtArgs["result"]["transaction"]>
     composites: {}
@@ -6722,10 +10476,8 @@ export namespace Prisma {
     readonly amount: FieldRef<"Transaction", 'Decimal'>
     readonly balanceAfter: FieldRef<"Transaction", 'Decimal'>
     readonly ticker: FieldRef<"Transaction", 'String'>
-    readonly quantity: FieldRef<"Transaction", 'Int'>
+    readonly quantity: FieldRef<"Transaction", 'Decimal'>
     readonly price: FieldRef<"Transaction", 'Decimal'>
-    readonly fromWalletId: FieldRef<"Transaction", 'String'>
-    readonly toWalletId: FieldRef<"Transaction", 'String'>
     readonly createdAt: FieldRef<"Transaction", 'DateTime'>
   }
     
@@ -7147,1074 +10899,6 @@ export namespace Prisma {
 
 
   /**
-   * Model Trades
-   */
-
-  export type AggregateTrades = {
-    _count: TradesCountAggregateOutputType | null
-    _avg: TradesAvgAggregateOutputType | null
-    _sum: TradesSumAggregateOutputType | null
-    _min: TradesMinAggregateOutputType | null
-    _max: TradesMaxAggregateOutputType | null
-  }
-
-  export type TradesAvgAggregateOutputType = {
-    price: Decimal | null
-    quantity: Decimal | null
-    quoteQuantity: Decimal | null
-  }
-
-  export type TradesSumAggregateOutputType = {
-    price: Decimal | null
-    quantity: Decimal | null
-    quoteQuantity: Decimal | null
-  }
-
-  export type TradesMinAggregateOutputType = {
-    id: string | null
-    market: string | null
-    price: Decimal | null
-    quantity: Decimal | null
-    quoteQuantity: Decimal | null
-    isBuyerMaker: boolean | null
-    timestamp: Date | null
-  }
-
-  export type TradesMaxAggregateOutputType = {
-    id: string | null
-    market: string | null
-    price: Decimal | null
-    quantity: Decimal | null
-    quoteQuantity: Decimal | null
-    isBuyerMaker: boolean | null
-    timestamp: Date | null
-  }
-
-  export type TradesCountAggregateOutputType = {
-    id: number
-    market: number
-    price: number
-    quantity: number
-    quoteQuantity: number
-    isBuyerMaker: number
-    timestamp: number
-    _all: number
-  }
-
-
-  export type TradesAvgAggregateInputType = {
-    price?: true
-    quantity?: true
-    quoteQuantity?: true
-  }
-
-  export type TradesSumAggregateInputType = {
-    price?: true
-    quantity?: true
-    quoteQuantity?: true
-  }
-
-  export type TradesMinAggregateInputType = {
-    id?: true
-    market?: true
-    price?: true
-    quantity?: true
-    quoteQuantity?: true
-    isBuyerMaker?: true
-    timestamp?: true
-  }
-
-  export type TradesMaxAggregateInputType = {
-    id?: true
-    market?: true
-    price?: true
-    quantity?: true
-    quoteQuantity?: true
-    isBuyerMaker?: true
-    timestamp?: true
-  }
-
-  export type TradesCountAggregateInputType = {
-    id?: true
-    market?: true
-    price?: true
-    quantity?: true
-    quoteQuantity?: true
-    isBuyerMaker?: true
-    timestamp?: true
-    _all?: true
-  }
-
-  export type TradesAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which Trades to aggregate.
-     */
-    where?: TradesWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Trades to fetch.
-     */
-    orderBy?: TradesOrderByWithRelationInput | TradesOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: TradesWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Trades from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Trades.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned Trades
-    **/
-    _count?: true | TradesCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to average
-    **/
-    _avg?: TradesAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: TradesSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: TradesMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: TradesMaxAggregateInputType
-  }
-
-  export type GetTradesAggregateType<T extends TradesAggregateArgs> = {
-        [P in keyof T & keyof AggregateTrades]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateTrades[P]>
-      : GetScalarType<T[P], AggregateTrades[P]>
-  }
-
-
-
-
-  export type TradesGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: TradesWhereInput
-    orderBy?: TradesOrderByWithAggregationInput | TradesOrderByWithAggregationInput[]
-    by: TradesScalarFieldEnum[] | TradesScalarFieldEnum
-    having?: TradesScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: TradesCountAggregateInputType | true
-    _avg?: TradesAvgAggregateInputType
-    _sum?: TradesSumAggregateInputType
-    _min?: TradesMinAggregateInputType
-    _max?: TradesMaxAggregateInputType
-  }
-
-  export type TradesGroupByOutputType = {
-    id: string
-    market: string
-    price: Decimal
-    quantity: Decimal
-    quoteQuantity: Decimal
-    isBuyerMaker: boolean
-    timestamp: Date
-    _count: TradesCountAggregateOutputType | null
-    _avg: TradesAvgAggregateOutputType | null
-    _sum: TradesSumAggregateOutputType | null
-    _min: TradesMinAggregateOutputType | null
-    _max: TradesMaxAggregateOutputType | null
-  }
-
-  type GetTradesGroupByPayload<T extends TradesGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<TradesGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof TradesGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], TradesGroupByOutputType[P]>
-            : GetScalarType<T[P], TradesGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type TradesSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    market?: boolean
-    price?: boolean
-    quantity?: boolean
-    quoteQuantity?: boolean
-    isBuyerMaker?: boolean
-    timestamp?: boolean
-  }, ExtArgs["result"]["trades"]>
-
-  export type TradesSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    market?: boolean
-    price?: boolean
-    quantity?: boolean
-    quoteQuantity?: boolean
-    isBuyerMaker?: boolean
-    timestamp?: boolean
-  }, ExtArgs["result"]["trades"]>
-
-  export type TradesSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    market?: boolean
-    price?: boolean
-    quantity?: boolean
-    quoteQuantity?: boolean
-    isBuyerMaker?: boolean
-    timestamp?: boolean
-  }, ExtArgs["result"]["trades"]>
-
-  export type TradesSelectScalar = {
-    id?: boolean
-    market?: boolean
-    price?: boolean
-    quantity?: boolean
-    quoteQuantity?: boolean
-    isBuyerMaker?: boolean
-    timestamp?: boolean
-  }
-
-  export type TradesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "market" | "price" | "quantity" | "quoteQuantity" | "isBuyerMaker" | "timestamp", ExtArgs["result"]["trades"]>
-
-  export type $TradesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "Trades"
-    objects: {}
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      market: string
-      price: Prisma.Decimal
-      quantity: Prisma.Decimal
-      quoteQuantity: Prisma.Decimal
-      isBuyerMaker: boolean
-      timestamp: Date
-    }, ExtArgs["result"]["trades"]>
-    composites: {}
-  }
-
-  type TradesGetPayload<S extends boolean | null | undefined | TradesDefaultArgs> = $Result.GetResult<Prisma.$TradesPayload, S>
-
-  type TradesCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<TradesFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: TradesCountAggregateInputType | true
-    }
-
-  export interface TradesDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Trades'], meta: { name: 'Trades' } }
-    /**
-     * Find zero or one Trades that matches the filter.
-     * @param {TradesFindUniqueArgs} args - Arguments to find a Trades
-     * @example
-     * // Get one Trades
-     * const trades = await prisma.trades.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends TradesFindUniqueArgs>(args: SelectSubset<T, TradesFindUniqueArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one Trades that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {TradesFindUniqueOrThrowArgs} args - Arguments to find a Trades
-     * @example
-     * // Get one Trades
-     * const trades = await prisma.trades.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends TradesFindUniqueOrThrowArgs>(args: SelectSubset<T, TradesFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Trades that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesFindFirstArgs} args - Arguments to find a Trades
-     * @example
-     * // Get one Trades
-     * const trades = await prisma.trades.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends TradesFindFirstArgs>(args?: SelectSubset<T, TradesFindFirstArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first Trades that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesFindFirstOrThrowArgs} args - Arguments to find a Trades
-     * @example
-     * // Get one Trades
-     * const trades = await prisma.trades.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends TradesFindFirstOrThrowArgs>(args?: SelectSubset<T, TradesFindFirstOrThrowArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more Trades that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all Trades
-     * const trades = await prisma.trades.findMany()
-     * 
-     * // Get first 10 Trades
-     * const trades = await prisma.trades.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const tradesWithIdOnly = await prisma.trades.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends TradesFindManyArgs>(args?: SelectSubset<T, TradesFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a Trades.
-     * @param {TradesCreateArgs} args - Arguments to create a Trades.
-     * @example
-     * // Create one Trades
-     * const Trades = await prisma.trades.create({
-     *   data: {
-     *     // ... data to create a Trades
-     *   }
-     * })
-     * 
-     */
-    create<T extends TradesCreateArgs>(args: SelectSubset<T, TradesCreateArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many Trades.
-     * @param {TradesCreateManyArgs} args - Arguments to create many Trades.
-     * @example
-     * // Create many Trades
-     * const trades = await prisma.trades.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends TradesCreateManyArgs>(args?: SelectSubset<T, TradesCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many Trades and returns the data saved in the database.
-     * @param {TradesCreateManyAndReturnArgs} args - Arguments to create many Trades.
-     * @example
-     * // Create many Trades
-     * const trades = await prisma.trades.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many Trades and only return the `id`
-     * const tradesWithIdOnly = await prisma.trades.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends TradesCreateManyAndReturnArgs>(args?: SelectSubset<T, TradesCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a Trades.
-     * @param {TradesDeleteArgs} args - Arguments to delete one Trades.
-     * @example
-     * // Delete one Trades
-     * const Trades = await prisma.trades.delete({
-     *   where: {
-     *     // ... filter to delete one Trades
-     *   }
-     * })
-     * 
-     */
-    delete<T extends TradesDeleteArgs>(args: SelectSubset<T, TradesDeleteArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one Trades.
-     * @param {TradesUpdateArgs} args - Arguments to update one Trades.
-     * @example
-     * // Update one Trades
-     * const trades = await prisma.trades.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends TradesUpdateArgs>(args: SelectSubset<T, TradesUpdateArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more Trades.
-     * @param {TradesDeleteManyArgs} args - Arguments to filter Trades to delete.
-     * @example
-     * // Delete a few Trades
-     * const { count } = await prisma.trades.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends TradesDeleteManyArgs>(args?: SelectSubset<T, TradesDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Trades.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many Trades
-     * const trades = await prisma.trades.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends TradesUpdateManyArgs>(args: SelectSubset<T, TradesUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more Trades and returns the data updated in the database.
-     * @param {TradesUpdateManyAndReturnArgs} args - Arguments to update many Trades.
-     * @example
-     * // Update many Trades
-     * const trades = await prisma.trades.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more Trades and only return the `id`
-     * const tradesWithIdOnly = await prisma.trades.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends TradesUpdateManyAndReturnArgs>(args: SelectSubset<T, TradesUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one Trades.
-     * @param {TradesUpsertArgs} args - Arguments to update or create a Trades.
-     * @example
-     * // Update or create a Trades
-     * const trades = await prisma.trades.upsert({
-     *   create: {
-     *     // ... data to create a Trades
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the Trades we want to update
-     *   }
-     * })
-     */
-    upsert<T extends TradesUpsertArgs>(args: SelectSubset<T, TradesUpsertArgs<ExtArgs>>): Prisma__TradesClient<$Result.GetResult<Prisma.$TradesPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of Trades.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesCountArgs} args - Arguments to filter Trades to count.
-     * @example
-     * // Count the number of Trades
-     * const count = await prisma.trades.count({
-     *   where: {
-     *     // ... the filter for the Trades we want to count
-     *   }
-     * })
-    **/
-    count<T extends TradesCountArgs>(
-      args?: Subset<T, TradesCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], TradesCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a Trades.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends TradesAggregateArgs>(args: Subset<T, TradesAggregateArgs>): Prisma.PrismaPromise<GetTradesAggregateType<T>>
-
-    /**
-     * Group by Trades.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {TradesGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends TradesGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: TradesGroupByArgs['orderBy'] }
-        : { orderBy?: TradesGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, TradesGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTradesGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the Trades model
-   */
-  readonly fields: TradesFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for Trades.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__TradesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the Trades model
-   */
-  interface TradesFieldRefs {
-    readonly id: FieldRef<"Trades", 'String'>
-    readonly market: FieldRef<"Trades", 'String'>
-    readonly price: FieldRef<"Trades", 'Decimal'>
-    readonly quantity: FieldRef<"Trades", 'Decimal'>
-    readonly quoteQuantity: FieldRef<"Trades", 'Decimal'>
-    readonly isBuyerMaker: FieldRef<"Trades", 'Boolean'>
-    readonly timestamp: FieldRef<"Trades", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * Trades findUnique
-   */
-  export type TradesFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter, which Trades to fetch.
-     */
-    where: TradesWhereUniqueInput
-  }
-
-  /**
-   * Trades findUniqueOrThrow
-   */
-  export type TradesFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter, which Trades to fetch.
-     */
-    where: TradesWhereUniqueInput
-  }
-
-  /**
-   * Trades findFirst
-   */
-  export type TradesFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter, which Trades to fetch.
-     */
-    where?: TradesWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Trades to fetch.
-     */
-    orderBy?: TradesOrderByWithRelationInput | TradesOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Trades.
-     */
-    cursor?: TradesWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Trades from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Trades.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Trades.
-     */
-    distinct?: TradesScalarFieldEnum | TradesScalarFieldEnum[]
-  }
-
-  /**
-   * Trades findFirstOrThrow
-   */
-  export type TradesFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter, which Trades to fetch.
-     */
-    where?: TradesWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Trades to fetch.
-     */
-    orderBy?: TradesOrderByWithRelationInput | TradesOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for Trades.
-     */
-    cursor?: TradesWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Trades from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Trades.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Trades.
-     */
-    distinct?: TradesScalarFieldEnum | TradesScalarFieldEnum[]
-  }
-
-  /**
-   * Trades findMany
-   */
-  export type TradesFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter, which Trades to fetch.
-     */
-    where?: TradesWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of Trades to fetch.
-     */
-    orderBy?: TradesOrderByWithRelationInput | TradesOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing Trades.
-     */
-    cursor?: TradesWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` Trades from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` Trades.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Trades.
-     */
-    distinct?: TradesScalarFieldEnum | TradesScalarFieldEnum[]
-  }
-
-  /**
-   * Trades create
-   */
-  export type TradesCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * The data needed to create a Trades.
-     */
-    data: XOR<TradesCreateInput, TradesUncheckedCreateInput>
-  }
-
-  /**
-   * Trades createMany
-   */
-  export type TradesCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many Trades.
-     */
-    data: TradesCreateManyInput | TradesCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * Trades createManyAndReturn
-   */
-  export type TradesCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * The data used to create many Trades.
-     */
-    data: TradesCreateManyInput | TradesCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * Trades update
-   */
-  export type TradesUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * The data needed to update a Trades.
-     */
-    data: XOR<TradesUpdateInput, TradesUncheckedUpdateInput>
-    /**
-     * Choose, which Trades to update.
-     */
-    where: TradesWhereUniqueInput
-  }
-
-  /**
-   * Trades updateMany
-   */
-  export type TradesUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update Trades.
-     */
-    data: XOR<TradesUpdateManyMutationInput, TradesUncheckedUpdateManyInput>
-    /**
-     * Filter which Trades to update
-     */
-    where?: TradesWhereInput
-    /**
-     * Limit how many Trades to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * Trades updateManyAndReturn
-   */
-  export type TradesUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * The data used to update Trades.
-     */
-    data: XOR<TradesUpdateManyMutationInput, TradesUncheckedUpdateManyInput>
-    /**
-     * Filter which Trades to update
-     */
-    where?: TradesWhereInput
-    /**
-     * Limit how many Trades to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * Trades upsert
-   */
-  export type TradesUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * The filter to search for the Trades to update in case it exists.
-     */
-    where: TradesWhereUniqueInput
-    /**
-     * In case the Trades found by the `where` argument doesn't exist, create a new Trades with this data.
-     */
-    create: XOR<TradesCreateInput, TradesUncheckedCreateInput>
-    /**
-     * In case the Trades was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<TradesUpdateInput, TradesUncheckedUpdateInput>
-  }
-
-  /**
-   * Trades delete
-   */
-  export type TradesDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-    /**
-     * Filter which Trades to delete.
-     */
-    where: TradesWhereUniqueInput
-  }
-
-  /**
-   * Trades deleteMany
-   */
-  export type TradesDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which Trades to delete
-     */
-    where?: TradesWhereInput
-    /**
-     * Limit how many Trades to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * Trades without action
-   */
-  export type TradesDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Trades
-     */
-    select?: TradesSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Trades
-     */
-    omit?: TradesOmit<ExtArgs> | null
-  }
-
-
-  /**
    * Enums
    */
 
@@ -8235,7 +10919,6 @@ export namespace Prisma {
     emailVerified: 'emailVerified',
     image: 'image',
     password: 'password',
-    isVerified: 'isVerified',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -8261,6 +10944,19 @@ export namespace Prisma {
   export type AccountScalarFieldEnum = (typeof AccountScalarFieldEnum)[keyof typeof AccountScalarFieldEnum]
 
 
+  export const StockScalarFieldEnum: {
+    symbol: 'symbol',
+    companyName: 'companyName',
+    status: 'status',
+    baseAsset: 'baseAsset',
+    quoteAsset: 'quoteAsset',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type StockScalarFieldEnum = (typeof StockScalarFieldEnum)[keyof typeof StockScalarFieldEnum]
+
+
   export const WalletScalarFieldEnum: {
     userId: 'userId',
     balance: 'balance',
@@ -8271,14 +10967,54 @@ export namespace Prisma {
   export type WalletScalarFieldEnum = (typeof WalletScalarFieldEnum)[keyof typeof WalletScalarFieldEnum]
 
 
-  export const TokenScalarFieldEnum: {
+  export const OrderScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
-    verifyToken: 'verifyToken',
-    verifyTokenExp: 'verifyTokenExp'
+    symbol: 'symbol',
+    side: 'side',
+    orderType: 'orderType',
+    price: 'price',
+    quantity: 'quantity',
+    filledQty: 'filledQty',
+    remainingQty: 'remainingQty',
+    status: 'status',
+    exchangeOrderId: 'exchangeOrderId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
   };
 
-  export type TokenScalarFieldEnum = (typeof TokenScalarFieldEnum)[keyof typeof TokenScalarFieldEnum]
+  export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+  export const MatchExecutionScalarFieldEnum: {
+    matchId: 'matchId',
+    buyOrderId: 'buyOrderId',
+    sellOrderId: 'sellOrderId',
+    symbol: 'symbol',
+    price: 'price',
+    quantity: 'quantity',
+    quoteQuantity: 'quoteQuantity',
+    buyerId: 'buyerId',
+    sellerId: 'sellerId',
+    isBuyerMaker: 'isBuyerMaker',
+    status: 'status',
+    settledAt: 'settledAt'
+  };
+
+  export type MatchExecutionScalarFieldEnum = (typeof MatchExecutionScalarFieldEnum)[keyof typeof MatchExecutionScalarFieldEnum]
+
+
+  export const TradeScalarFieldEnum: {
+    id: 'id',
+    symbol: 'symbol',
+    price: 'price',
+    quantity: 'quantity',
+    quoteQuantity: 'quoteQuantity',
+    isBuyerMaker: 'isBuyerMaker',
+    timestamp: 'timestamp'
+  };
+
+  export type TradeScalarFieldEnum = (typeof TradeScalarFieldEnum)[keyof typeof TradeScalarFieldEnum]
 
 
   export const TransactionScalarFieldEnum: {
@@ -8292,25 +11028,10 @@ export namespace Prisma {
     ticker: 'ticker',
     quantity: 'quantity',
     price: 'price',
-    fromWalletId: 'fromWalletId',
-    toWalletId: 'toWalletId',
     createdAt: 'createdAt'
   };
 
   export type TransactionScalarFieldEnum = (typeof TransactionScalarFieldEnum)[keyof typeof TransactionScalarFieldEnum]
-
-
-  export const TradesScalarFieldEnum: {
-    id: 'id',
-    market: 'market',
-    price: 'price',
-    quantity: 'quantity',
-    quoteQuantity: 'quoteQuantity',
-    isBuyerMaker: 'isBuyerMaker',
-    timestamp: 'timestamp'
-  };
-
-  export type TradesScalarFieldEnum = (typeof TradesScalarFieldEnum)[keyof typeof TradesScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -8387,13 +11108,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -8404,6 +11118,20 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'StockStatus'
+   */
+  export type EnumStockStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StockStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'StockStatus[]'
+   */
+  export type ListEnumStockStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StockStatus[]'>
     
 
 
@@ -8432,6 +11160,69 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderSide'
+   */
+  export type EnumOrderSideFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderSide'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderSide[]'
+   */
+  export type ListEnumOrderSideFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderSide[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderType'
+   */
+  export type EnumOrderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderType'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderType[]'
+   */
+  export type ListEnumOrderTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderType[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderStatus'
+   */
+  export type EnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'OrderStatus[]'
+   */
+  export type ListEnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
+   * Reference to a field of type 'SettlementStatus'
+   */
+  export type EnumSettlementStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SettlementStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'SettlementStatus[]'
+   */
+  export type ListEnumSettlementStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SettlementStatus[]'>
     
 
 
@@ -8490,12 +11281,11 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableFilter<"User"> | Date | string | null
     image?: StringNullableFilter<"User"> | string | null
     password?: StringNullableFilter<"User"> | string | null
-    isVerified?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     accounts?: AccountListRelationFilter
     wallet?: XOR<WalletNullableScalarRelationFilter, WalletWhereInput> | null
-    token?: XOR<TokenNullableScalarRelationFilter, TokenWhereInput> | null
+    orders?: OrderListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -8505,12 +11295,11 @@ export namespace Prisma {
     emailVerified?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
     password?: SortOrderInput | SortOrder
-    isVerified?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     accounts?: AccountOrderByRelationAggregateInput
     wallet?: WalletOrderByWithRelationInput
-    token?: TokenOrderByWithRelationInput
+    orders?: OrderOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -8523,12 +11312,11 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableFilter<"User"> | Date | string | null
     image?: StringNullableFilter<"User"> | string | null
     password?: StringNullableFilter<"User"> | string | null
-    isVerified?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     accounts?: AccountListRelationFilter
     wallet?: XOR<WalletNullableScalarRelationFilter, WalletWhereInput> | null
-    token?: XOR<TokenNullableScalarRelationFilter, TokenWhereInput> | null
+    orders?: OrderListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -8538,7 +11326,6 @@ export namespace Prisma {
     emailVerified?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
     password?: SortOrderInput | SortOrder
-    isVerified?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -8556,7 +11343,6 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
     password?: StringNullableWithAggregatesFilter<"User"> | string | null
-    isVerified?: BoolWithAggregatesFilter<"User"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -8654,6 +11440,71 @@ export namespace Prisma {
     session_state?: StringNullableWithAggregatesFilter<"Account"> | string | null
   }
 
+  export type StockWhereInput = {
+    AND?: StockWhereInput | StockWhereInput[]
+    OR?: StockWhereInput[]
+    NOT?: StockWhereInput | StockWhereInput[]
+    symbol?: StringFilter<"Stock"> | string
+    companyName?: StringFilter<"Stock"> | string
+    status?: EnumStockStatusFilter<"Stock"> | $Enums.StockStatus
+    baseAsset?: StringFilter<"Stock"> | string
+    quoteAsset?: StringFilter<"Stock"> | string
+    createdAt?: DateTimeFilter<"Stock"> | Date | string
+    updatedAt?: DateTimeFilter<"Stock"> | Date | string
+    orders?: OrderListRelationFilter
+  }
+
+  export type StockOrderByWithRelationInput = {
+    symbol?: SortOrder
+    companyName?: SortOrder
+    status?: SortOrder
+    baseAsset?: SortOrder
+    quoteAsset?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    orders?: OrderOrderByRelationAggregateInput
+  }
+
+  export type StockWhereUniqueInput = Prisma.AtLeast<{
+    symbol?: string
+    AND?: StockWhereInput | StockWhereInput[]
+    OR?: StockWhereInput[]
+    NOT?: StockWhereInput | StockWhereInput[]
+    companyName?: StringFilter<"Stock"> | string
+    status?: EnumStockStatusFilter<"Stock"> | $Enums.StockStatus
+    baseAsset?: StringFilter<"Stock"> | string
+    quoteAsset?: StringFilter<"Stock"> | string
+    createdAt?: DateTimeFilter<"Stock"> | Date | string
+    updatedAt?: DateTimeFilter<"Stock"> | Date | string
+    orders?: OrderListRelationFilter
+  }, "symbol">
+
+  export type StockOrderByWithAggregationInput = {
+    symbol?: SortOrder
+    companyName?: SortOrder
+    status?: SortOrder
+    baseAsset?: SortOrder
+    quoteAsset?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: StockCountOrderByAggregateInput
+    _max?: StockMaxOrderByAggregateInput
+    _min?: StockMinOrderByAggregateInput
+  }
+
+  export type StockScalarWhereWithAggregatesInput = {
+    AND?: StockScalarWhereWithAggregatesInput | StockScalarWhereWithAggregatesInput[]
+    OR?: StockScalarWhereWithAggregatesInput[]
+    NOT?: StockScalarWhereWithAggregatesInput | StockScalarWhereWithAggregatesInput[]
+    symbol?: StringWithAggregatesFilter<"Stock"> | string
+    companyName?: StringWithAggregatesFilter<"Stock"> | string
+    status?: EnumStockStatusWithAggregatesFilter<"Stock"> | $Enums.StockStatus
+    baseAsset?: StringWithAggregatesFilter<"Stock"> | string
+    quoteAsset?: StringWithAggregatesFilter<"Stock"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"Stock"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Stock"> | Date | string
+  }
+
   export type WalletWhereInput = {
     AND?: WalletWhereInput | WalletWhereInput[]
     OR?: WalletWhereInput[]
@@ -8709,54 +11560,257 @@ export namespace Prisma {
     updatedAt?: DateTimeNullableWithAggregatesFilter<"Wallet"> | Date | string | null
   }
 
-  export type TokenWhereInput = {
-    AND?: TokenWhereInput | TokenWhereInput[]
-    OR?: TokenWhereInput[]
-    NOT?: TokenWhereInput | TokenWhereInput[]
-    id?: StringFilter<"Token"> | string
-    userId?: StringFilter<"Token"> | string
-    verifyToken?: StringNullableFilter<"Token"> | string | null
-    verifyTokenExp?: DateTimeNullableFilter<"Token"> | Date | string | null
+  export type OrderWhereInput = {
+    AND?: OrderWhereInput | OrderWhereInput[]
+    OR?: OrderWhereInput[]
+    NOT?: OrderWhereInput | OrderWhereInput[]
+    id?: StringFilter<"Order"> | string
+    userId?: StringFilter<"Order"> | string
+    symbol?: StringFilter<"Order"> | string
+    side?: EnumOrderSideFilter<"Order"> | $Enums.OrderSide
+    orderType?: EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+    price?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    exchangeOrderId?: StringNullableFilter<"Order"> | string | null
+    createdAt?: DateTimeFilter<"Order"> | Date | string
+    updatedAt?: DateTimeFilter<"Order"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    stock?: XOR<StockScalarRelationFilter, StockWhereInput>
   }
 
-  export type TokenOrderByWithRelationInput = {
+  export type OrderOrderByWithRelationInput = {
     id?: SortOrder
     userId?: SortOrder
-    verifyToken?: SortOrderInput | SortOrder
-    verifyTokenExp?: SortOrderInput | SortOrder
+    symbol?: SortOrder
+    side?: SortOrder
+    orderType?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+    status?: SortOrder
+    exchangeOrderId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
+    stock?: StockOrderByWithRelationInput
   }
 
-  export type TokenWhereUniqueInput = Prisma.AtLeast<{
+  export type OrderWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    userId?: string
-    AND?: TokenWhereInput | TokenWhereInput[]
-    OR?: TokenWhereInput[]
-    NOT?: TokenWhereInput | TokenWhereInput[]
-    verifyToken?: StringNullableFilter<"Token"> | string | null
-    verifyTokenExp?: DateTimeNullableFilter<"Token"> | Date | string | null
+    AND?: OrderWhereInput | OrderWhereInput[]
+    OR?: OrderWhereInput[]
+    NOT?: OrderWhereInput | OrderWhereInput[]
+    userId?: StringFilter<"Order"> | string
+    symbol?: StringFilter<"Order"> | string
+    side?: EnumOrderSideFilter<"Order"> | $Enums.OrderSide
+    orderType?: EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+    price?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    exchangeOrderId?: StringNullableFilter<"Order"> | string | null
+    createdAt?: DateTimeFilter<"Order"> | Date | string
+    updatedAt?: DateTimeFilter<"Order"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id" | "userId">
+    stock?: XOR<StockScalarRelationFilter, StockWhereInput>
+  }, "id">
 
-  export type TokenOrderByWithAggregationInput = {
+  export type OrderOrderByWithAggregationInput = {
     id?: SortOrder
     userId?: SortOrder
-    verifyToken?: SortOrderInput | SortOrder
-    verifyTokenExp?: SortOrderInput | SortOrder
-    _count?: TokenCountOrderByAggregateInput
-    _max?: TokenMaxOrderByAggregateInput
-    _min?: TokenMinOrderByAggregateInput
+    symbol?: SortOrder
+    side?: SortOrder
+    orderType?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+    status?: SortOrder
+    exchangeOrderId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: OrderCountOrderByAggregateInput
+    _avg?: OrderAvgOrderByAggregateInput
+    _max?: OrderMaxOrderByAggregateInput
+    _min?: OrderMinOrderByAggregateInput
+    _sum?: OrderSumOrderByAggregateInput
   }
 
-  export type TokenScalarWhereWithAggregatesInput = {
-    AND?: TokenScalarWhereWithAggregatesInput | TokenScalarWhereWithAggregatesInput[]
-    OR?: TokenScalarWhereWithAggregatesInput[]
-    NOT?: TokenScalarWhereWithAggregatesInput | TokenScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Token"> | string
-    userId?: StringWithAggregatesFilter<"Token"> | string
-    verifyToken?: StringNullableWithAggregatesFilter<"Token"> | string | null
-    verifyTokenExp?: DateTimeNullableWithAggregatesFilter<"Token"> | Date | string | null
+  export type OrderScalarWhereWithAggregatesInput = {
+    AND?: OrderScalarWhereWithAggregatesInput | OrderScalarWhereWithAggregatesInput[]
+    OR?: OrderScalarWhereWithAggregatesInput[]
+    NOT?: OrderScalarWhereWithAggregatesInput | OrderScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Order"> | string
+    userId?: StringWithAggregatesFilter<"Order"> | string
+    symbol?: StringWithAggregatesFilter<"Order"> | string
+    side?: EnumOrderSideWithAggregatesFilter<"Order"> | $Enums.OrderSide
+    orderType?: EnumOrderTypeWithAggregatesFilter<"Order"> | $Enums.OrderType
+    price?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+    exchangeOrderId?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
+  }
+
+  export type MatchExecutionWhereInput = {
+    AND?: MatchExecutionWhereInput | MatchExecutionWhereInput[]
+    OR?: MatchExecutionWhereInput[]
+    NOT?: MatchExecutionWhereInput | MatchExecutionWhereInput[]
+    matchId?: StringFilter<"MatchExecution"> | string
+    buyOrderId?: StringFilter<"MatchExecution"> | string
+    sellOrderId?: StringFilter<"MatchExecution"> | string
+    symbol?: StringFilter<"MatchExecution"> | string
+    price?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFilter<"MatchExecution"> | string
+    sellerId?: StringFilter<"MatchExecution"> | string
+    isBuyerMaker?: BoolFilter<"MatchExecution"> | boolean
+    status?: EnumSettlementStatusFilter<"MatchExecution"> | $Enums.SettlementStatus
+    settledAt?: DateTimeFilter<"MatchExecution"> | Date | string
+  }
+
+  export type MatchExecutionOrderByWithRelationInput = {
+    matchId?: SortOrder
+    buyOrderId?: SortOrder
+    sellOrderId?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    buyerId?: SortOrder
+    sellerId?: SortOrder
+    isBuyerMaker?: SortOrder
+    status?: SortOrder
+    settledAt?: SortOrder
+  }
+
+  export type MatchExecutionWhereUniqueInput = Prisma.AtLeast<{
+    matchId?: string
+    AND?: MatchExecutionWhereInput | MatchExecutionWhereInput[]
+    OR?: MatchExecutionWhereInput[]
+    NOT?: MatchExecutionWhereInput | MatchExecutionWhereInput[]
+    buyOrderId?: StringFilter<"MatchExecution"> | string
+    sellOrderId?: StringFilter<"MatchExecution"> | string
+    symbol?: StringFilter<"MatchExecution"> | string
+    price?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFilter<"MatchExecution"> | string
+    sellerId?: StringFilter<"MatchExecution"> | string
+    isBuyerMaker?: BoolFilter<"MatchExecution"> | boolean
+    status?: EnumSettlementStatusFilter<"MatchExecution"> | $Enums.SettlementStatus
+    settledAt?: DateTimeFilter<"MatchExecution"> | Date | string
+  }, "matchId">
+
+  export type MatchExecutionOrderByWithAggregationInput = {
+    matchId?: SortOrder
+    buyOrderId?: SortOrder
+    sellOrderId?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    buyerId?: SortOrder
+    sellerId?: SortOrder
+    isBuyerMaker?: SortOrder
+    status?: SortOrder
+    settledAt?: SortOrder
+    _count?: MatchExecutionCountOrderByAggregateInput
+    _avg?: MatchExecutionAvgOrderByAggregateInput
+    _max?: MatchExecutionMaxOrderByAggregateInput
+    _min?: MatchExecutionMinOrderByAggregateInput
+    _sum?: MatchExecutionSumOrderByAggregateInput
+  }
+
+  export type MatchExecutionScalarWhereWithAggregatesInput = {
+    AND?: MatchExecutionScalarWhereWithAggregatesInput | MatchExecutionScalarWhereWithAggregatesInput[]
+    OR?: MatchExecutionScalarWhereWithAggregatesInput[]
+    NOT?: MatchExecutionScalarWhereWithAggregatesInput | MatchExecutionScalarWhereWithAggregatesInput[]
+    matchId?: StringWithAggregatesFilter<"MatchExecution"> | string
+    buyOrderId?: StringWithAggregatesFilter<"MatchExecution"> | string
+    sellOrderId?: StringWithAggregatesFilter<"MatchExecution"> | string
+    symbol?: StringWithAggregatesFilter<"MatchExecution"> | string
+    price?: DecimalWithAggregatesFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalWithAggregatesFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalWithAggregatesFilter<"MatchExecution"> | Decimal | DecimalJsLike | number | string
+    buyerId?: StringWithAggregatesFilter<"MatchExecution"> | string
+    sellerId?: StringWithAggregatesFilter<"MatchExecution"> | string
+    isBuyerMaker?: BoolWithAggregatesFilter<"MatchExecution"> | boolean
+    status?: EnumSettlementStatusWithAggregatesFilter<"MatchExecution"> | $Enums.SettlementStatus
+    settledAt?: DateTimeWithAggregatesFilter<"MatchExecution"> | Date | string
+  }
+
+  export type TradeWhereInput = {
+    AND?: TradeWhereInput | TradeWhereInput[]
+    OR?: TradeWhereInput[]
+    NOT?: TradeWhereInput | TradeWhereInput[]
+    id?: StringFilter<"Trade"> | string
+    symbol?: StringFilter<"Trade"> | string
+    price?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFilter<"Trade"> | boolean
+    timestamp?: DateTimeFilter<"Trade"> | Date | string
+  }
+
+  export type TradeOrderByWithRelationInput = {
+    id?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    isBuyerMaker?: SortOrder
+    timestamp?: SortOrder
+  }
+
+  export type TradeWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: TradeWhereInput | TradeWhereInput[]
+    OR?: TradeWhereInput[]
+    NOT?: TradeWhereInput | TradeWhereInput[]
+    symbol?: StringFilter<"Trade"> | string
+    price?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFilter<"Trade"> | boolean
+    timestamp?: DateTimeFilter<"Trade"> | Date | string
+  }, "id">
+
+  export type TradeOrderByWithAggregationInput = {
+    id?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    isBuyerMaker?: SortOrder
+    timestamp?: SortOrder
+    _count?: TradeCountOrderByAggregateInput
+    _avg?: TradeAvgOrderByAggregateInput
+    _max?: TradeMaxOrderByAggregateInput
+    _min?: TradeMinOrderByAggregateInput
+    _sum?: TradeSumOrderByAggregateInput
+  }
+
+  export type TradeScalarWhereWithAggregatesInput = {
+    AND?: TradeScalarWhereWithAggregatesInput | TradeScalarWhereWithAggregatesInput[]
+    OR?: TradeScalarWhereWithAggregatesInput[]
+    NOT?: TradeScalarWhereWithAggregatesInput | TradeScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Trade"> | string
+    symbol?: StringWithAggregatesFilter<"Trade"> | string
+    price?: DecimalWithAggregatesFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalWithAggregatesFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalWithAggregatesFilter<"Trade"> | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolWithAggregatesFilter<"Trade"> | boolean
+    timestamp?: DateTimeWithAggregatesFilter<"Trade"> | Date | string
   }
 
   export type TransactionWhereInput = {
@@ -8771,10 +11825,8 @@ export namespace Prisma {
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     ticker?: StringNullableFilter<"Transaction"> | string | null
-    quantity?: IntNullableFilter<"Transaction"> | number | null
+    quantity?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
     price?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: StringNullableFilter<"Transaction"> | string | null
-    toWalletId?: StringNullableFilter<"Transaction"> | string | null
     createdAt?: DateTimeFilter<"Transaction"> | Date | string
     wallet?: XOR<WalletScalarRelationFilter, WalletWhereInput>
   }
@@ -8790,8 +11842,6 @@ export namespace Prisma {
     ticker?: SortOrderInput | SortOrder
     quantity?: SortOrderInput | SortOrder
     price?: SortOrderInput | SortOrder
-    fromWalletId?: SortOrderInput | SortOrder
-    toWalletId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     wallet?: WalletOrderByWithRelationInput
   }
@@ -8808,10 +11858,8 @@ export namespace Prisma {
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     ticker?: StringNullableFilter<"Transaction"> | string | null
-    quantity?: IntNullableFilter<"Transaction"> | number | null
+    quantity?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
     price?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: StringNullableFilter<"Transaction"> | string | null
-    toWalletId?: StringNullableFilter<"Transaction"> | string | null
     createdAt?: DateTimeFilter<"Transaction"> | Date | string
     wallet?: XOR<WalletScalarRelationFilter, WalletWhereInput>
   }, "id">
@@ -8827,8 +11875,6 @@ export namespace Prisma {
     ticker?: SortOrderInput | SortOrder
     quantity?: SortOrderInput | SortOrder
     price?: SortOrderInput | SortOrder
-    fromWalletId?: SortOrderInput | SortOrder
-    toWalletId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: TransactionCountOrderByAggregateInput
     _avg?: TransactionAvgOrderByAggregateInput
@@ -8849,76 +11895,9 @@ export namespace Prisma {
     amount?: DecimalWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     ticker?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
-    quantity?: IntNullableWithAggregatesFilter<"Transaction"> | number | null
+    quantity?: DecimalNullableWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
     price?: DecimalNullableWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
-    toWalletId?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Transaction"> | Date | string
-  }
-
-  export type TradesWhereInput = {
-    AND?: TradesWhereInput | TradesWhereInput[]
-    OR?: TradesWhereInput[]
-    NOT?: TradesWhereInput | TradesWhereInput[]
-    id?: StringFilter<"Trades"> | string
-    market?: StringFilter<"Trades"> | string
-    price?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFilter<"Trades"> | boolean
-    timestamp?: DateTimeFilter<"Trades"> | Date | string
-  }
-
-  export type TradesOrderByWithRelationInput = {
-    id?: SortOrder
-    market?: SortOrder
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-    isBuyerMaker?: SortOrder
-    timestamp?: SortOrder
-  }
-
-  export type TradesWhereUniqueInput = Prisma.AtLeast<{
-    id_timestamp?: TradesIdTimestampCompoundUniqueInput
-    AND?: TradesWhereInput | TradesWhereInput[]
-    OR?: TradesWhereInput[]
-    NOT?: TradesWhereInput | TradesWhereInput[]
-    id?: StringFilter<"Trades"> | string
-    market?: StringFilter<"Trades"> | string
-    price?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFilter<"Trades"> | boolean
-    timestamp?: DateTimeFilter<"Trades"> | Date | string
-  }, "id_timestamp">
-
-  export type TradesOrderByWithAggregationInput = {
-    id?: SortOrder
-    market?: SortOrder
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-    isBuyerMaker?: SortOrder
-    timestamp?: SortOrder
-    _count?: TradesCountOrderByAggregateInput
-    _avg?: TradesAvgOrderByAggregateInput
-    _max?: TradesMaxOrderByAggregateInput
-    _min?: TradesMinOrderByAggregateInput
-    _sum?: TradesSumOrderByAggregateInput
-  }
-
-  export type TradesScalarWhereWithAggregatesInput = {
-    AND?: TradesScalarWhereWithAggregatesInput | TradesScalarWhereWithAggregatesInput[]
-    OR?: TradesScalarWhereWithAggregatesInput[]
-    NOT?: TradesScalarWhereWithAggregatesInput | TradesScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"Trades"> | string
-    market?: StringWithAggregatesFilter<"Trades"> | string
-    price?: DecimalWithAggregatesFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalWithAggregatesFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalWithAggregatesFilter<"Trades"> | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolWithAggregatesFilter<"Trades"> | boolean
-    timestamp?: DateTimeWithAggregatesFilter<"Trades"> | Date | string
   }
 
   export type UserCreateInput = {
@@ -8928,12 +11907,11 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountCreateNestedManyWithoutUserInput
     wallet?: WalletCreateNestedOneWithoutUserInput
-    token?: TokenCreateNestedOneWithoutUserInput
+    orders?: OrderCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -8943,12 +11921,11 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
-    token?: TokenUncheckedCreateNestedOneWithoutUserInput
+    orders?: OrderUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -8958,12 +11935,11 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUpdateManyWithoutUserNestedInput
     wallet?: WalletUpdateOneWithoutUserNestedInput
-    token?: TokenUpdateOneWithoutUserNestedInput
+    orders?: OrderUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -8973,12 +11949,11 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
-    token?: TokenUncheckedUpdateOneWithoutUserNestedInput
+    orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -8988,7 +11963,6 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -9000,7 +11974,6 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -9012,7 +11985,6 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -9121,6 +12093,80 @@ export namespace Prisma {
     session_state?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type StockCreateInput = {
+    symbol: string
+    companyName: string
+    status?: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    orders?: OrderCreateNestedManyWithoutStockInput
+  }
+
+  export type StockUncheckedCreateInput = {
+    symbol: string
+    companyName: string
+    status?: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    orders?: OrderUncheckedCreateNestedManyWithoutStockInput
+  }
+
+  export type StockUpdateInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    orders?: OrderUpdateManyWithoutStockNestedInput
+  }
+
+  export type StockUncheckedUpdateInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    orders?: OrderUncheckedUpdateManyWithoutStockNestedInput
+  }
+
+  export type StockCreateManyInput = {
+    symbol: string
+    companyName: string
+    status?: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type StockUpdateManyMutationInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type StockUncheckedUpdateManyInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WalletCreateInput = {
     balance?: Decimal | DecimalJsLike | number | string
     assetsHeld?: JsonNullValueInput | InputJsonValue
@@ -9173,52 +12219,289 @@ export namespace Prisma {
     updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
-  export type TokenCreateInput = {
+  export type OrderCreateInput = {
     id?: string
-    verifyToken?: string | null
-    verifyTokenExp?: Date | string | null
-    user: UserCreateNestedOneWithoutTokenInput
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutOrdersInput
+    stock: StockCreateNestedOneWithoutOrdersInput
   }
 
-  export type TokenUncheckedCreateInput = {
-    id?: string
-    userId: string
-    verifyToken?: string | null
-    verifyTokenExp?: Date | string | null
-  }
-
-  export type TokenUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    user?: UserUpdateOneRequiredWithoutTokenNestedInput
-  }
-
-  export type TokenUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  }
-
-  export type TokenCreateManyInput = {
+  export type OrderUncheckedCreateInput = {
     id?: string
     userId: string
-    verifyToken?: string | null
-    verifyTokenExp?: Date | string | null
+    symbol: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
-  export type TokenUpdateManyMutationInput = {
+  export type OrderUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    stock?: StockUpdateOneRequiredWithoutOrdersNestedInput
   }
 
-  export type TokenUncheckedUpdateManyInput = {
+  export type OrderUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    symbol?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderCreateManyInput = {
+    id?: string
+    userId: string
+    symbol: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchExecutionCreateInput = {
+    matchId: string
+    buyOrderId: string
+    sellOrderId: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    buyerId: string
+    sellerId: string
+    isBuyerMaker: boolean
+    status?: $Enums.SettlementStatus
+    settledAt?: Date | string
+  }
+
+  export type MatchExecutionUncheckedCreateInput = {
+    matchId: string
+    buyOrderId: string
+    sellOrderId: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    buyerId: string
+    sellerId: string
+    isBuyerMaker: boolean
+    status?: $Enums.SettlementStatus
+    settledAt?: Date | string
+  }
+
+  export type MatchExecutionUpdateInput = {
+    matchId?: StringFieldUpdateOperationsInput | string
+    buyOrderId?: StringFieldUpdateOperationsInput | string
+    sellOrderId?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFieldUpdateOperationsInput | string
+    sellerId?: StringFieldUpdateOperationsInput | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    status?: EnumSettlementStatusFieldUpdateOperationsInput | $Enums.SettlementStatus
+    settledAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchExecutionUncheckedUpdateInput = {
+    matchId?: StringFieldUpdateOperationsInput | string
+    buyOrderId?: StringFieldUpdateOperationsInput | string
+    sellOrderId?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFieldUpdateOperationsInput | string
+    sellerId?: StringFieldUpdateOperationsInput | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    status?: EnumSettlementStatusFieldUpdateOperationsInput | $Enums.SettlementStatus
+    settledAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchExecutionCreateManyInput = {
+    matchId: string
+    buyOrderId: string
+    sellOrderId: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    buyerId: string
+    sellerId: string
+    isBuyerMaker: boolean
+    status?: $Enums.SettlementStatus
+    settledAt?: Date | string
+  }
+
+  export type MatchExecutionUpdateManyMutationInput = {
+    matchId?: StringFieldUpdateOperationsInput | string
+    buyOrderId?: StringFieldUpdateOperationsInput | string
+    sellOrderId?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFieldUpdateOperationsInput | string
+    sellerId?: StringFieldUpdateOperationsInput | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    status?: EnumSettlementStatusFieldUpdateOperationsInput | $Enums.SettlementStatus
+    settledAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchExecutionUncheckedUpdateManyInput = {
+    matchId?: StringFieldUpdateOperationsInput | string
+    buyOrderId?: StringFieldUpdateOperationsInput | string
+    sellOrderId?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    buyerId?: StringFieldUpdateOperationsInput | string
+    sellerId?: StringFieldUpdateOperationsInput | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    status?: EnumSettlementStatusFieldUpdateOperationsInput | $Enums.SettlementStatus
+    settledAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TradeCreateInput = {
+    id?: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    isBuyerMaker: boolean
+    timestamp?: Date | string
+  }
+
+  export type TradeUncheckedCreateInput = {
+    id?: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    isBuyerMaker: boolean
+    timestamp?: Date | string
+  }
+
+  export type TradeUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TradeUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TradeCreateManyInput = {
+    id?: string
+    symbol: string
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    quoteQuantity: Decimal | DecimalJsLike | number | string
+    isBuyerMaker: boolean
+    timestamp?: Date | string
+  }
+
+  export type TradeUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TradeUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TransactionCreateInput = {
@@ -9229,10 +12512,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
     wallet: WalletCreateNestedOneWithoutTransactionsInput
   }
@@ -9246,10 +12527,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
   }
 
@@ -9261,10 +12540,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     wallet?: WalletUpdateOneRequiredWithoutTransactionsNestedInput
   }
@@ -9278,10 +12555,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -9294,10 +12569,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
   }
 
@@ -9309,10 +12582,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -9325,81 +12596,9 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TradesCreateInput = {
-    id: string
-    market: string
-    price: Decimal | DecimalJsLike | number | string
-    quantity: Decimal | DecimalJsLike | number | string
-    quoteQuantity: Decimal | DecimalJsLike | number | string
-    isBuyerMaker: boolean
-    timestamp?: Date | string
-  }
-
-  export type TradesUncheckedCreateInput = {
-    id: string
-    market: string
-    price: Decimal | DecimalJsLike | number | string
-    quantity: Decimal | DecimalJsLike | number | string
-    quoteQuantity: Decimal | DecimalJsLike | number | string
-    isBuyerMaker: boolean
-    timestamp?: Date | string
-  }
-
-  export type TradesUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    market?: StringFieldUpdateOperationsInput | string
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
-    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TradesUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    market?: StringFieldUpdateOperationsInput | string
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
-    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TradesCreateManyInput = {
-    id: string
-    market: string
-    price: Decimal | DecimalJsLike | number | string
-    quantity: Decimal | DecimalJsLike | number | string
-    quoteQuantity: Decimal | DecimalJsLike | number | string
-    isBuyerMaker: boolean
-    timestamp?: Date | string
-  }
-
-  export type TradesUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    market?: StringFieldUpdateOperationsInput | string
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
-    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type TradesUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    market?: StringFieldUpdateOperationsInput | string
-    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    quoteQuantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
-    isBuyerMaker?: BoolFieldUpdateOperationsInput | boolean
-    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -9443,11 +12642,6 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -9470,9 +12664,10 @@ export namespace Prisma {
     isNot?: WalletWhereInput | null
   }
 
-  export type TokenNullableScalarRelationFilter = {
-    is?: TokenWhereInput | null
-    isNot?: TokenWhereInput | null
+  export type OrderListRelationFilter = {
+    every?: OrderWhereInput
+    some?: OrderWhereInput
+    none?: OrderWhereInput
   }
 
   export type SortOrderInput = {
@@ -9484,6 +12679,10 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type OrderOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -9491,7 +12690,6 @@ export namespace Prisma {
     emailVerified?: SortOrder
     image?: SortOrder
     password?: SortOrder
-    isVerified?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9503,7 +12701,6 @@ export namespace Prisma {
     emailVerified?: SortOrder
     image?: SortOrder
     password?: SortOrder
-    isVerified?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9515,7 +12712,6 @@ export namespace Prisma {
     emailVerified?: SortOrder
     image?: SortOrder
     password?: SortOrder
-    isVerified?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9568,14 +12764,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
@@ -9680,6 +12868,53 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedIntNullableFilter<$PrismaModel>
     _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type EnumStockStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.StockStatus | EnumStockStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumStockStatusFilter<$PrismaModel> | $Enums.StockStatus
+  }
+
+  export type StockCountOrderByAggregateInput = {
+    symbol?: SortOrder
+    companyName?: SortOrder
+    status?: SortOrder
+    baseAsset?: SortOrder
+    quoteAsset?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type StockMaxOrderByAggregateInput = {
+    symbol?: SortOrder
+    companyName?: SortOrder
+    status?: SortOrder
+    baseAsset?: SortOrder
+    quoteAsset?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type StockMinOrderByAggregateInput = {
+    symbol?: SortOrder
+    companyName?: SortOrder
+    status?: SortOrder
+    baseAsset?: SortOrder
+    quoteAsset?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumStockStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.StockStatus | EnumStockStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumStockStatusWithAggregatesFilter<$PrismaModel> | $Enums.StockStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumStockStatusFilter<$PrismaModel>
+    _max?: NestedEnumStockStatusFilter<$PrismaModel>
   }
 
   export type DecimalFilter<$PrismaModel = never> = {
@@ -9795,25 +13030,251 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
-  export type TokenCountOrderByAggregateInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    verifyToken?: SortOrder
-    verifyTokenExp?: SortOrder
+  export type EnumOrderSideFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderSide | EnumOrderSideFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderSideFilter<$PrismaModel> | $Enums.OrderSide
   }
 
-  export type TokenMaxOrderByAggregateInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    verifyToken?: SortOrder
-    verifyTokenExp?: SortOrder
+  export type EnumOrderTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderType | EnumOrderTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderTypeFilter<$PrismaModel> | $Enums.OrderType
   }
 
-  export type TokenMinOrderByAggregateInput = {
+  export type EnumOrderStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderStatus | EnumOrderStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderStatusFilter<$PrismaModel> | $Enums.OrderStatus
+  }
+
+  export type StockScalarRelationFilter = {
+    is?: StockWhereInput
+    isNot?: StockWhereInput
+  }
+
+  export type OrderCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    verifyToken?: SortOrder
-    verifyTokenExp?: SortOrder
+    symbol?: SortOrder
+    side?: SortOrder
+    orderType?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+    status?: SortOrder
+    exchangeOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrderAvgOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+  }
+
+  export type OrderMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    symbol?: SortOrder
+    side?: SortOrder
+    orderType?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+    status?: SortOrder
+    exchangeOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrderMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    symbol?: SortOrder
+    side?: SortOrder
+    orderType?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+    status?: SortOrder
+    exchangeOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type OrderSumOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    filledQty?: SortOrder
+    remainingQty?: SortOrder
+  }
+
+  export type EnumOrderSideWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderSide | EnumOrderSideFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderSideWithAggregatesFilter<$PrismaModel> | $Enums.OrderSide
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderSideFilter<$PrismaModel>
+    _max?: NestedEnumOrderSideFilter<$PrismaModel>
+  }
+
+  export type EnumOrderTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderType | EnumOrderTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderTypeWithAggregatesFilter<$PrismaModel> | $Enums.OrderType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderTypeFilter<$PrismaModel>
+    _max?: NestedEnumOrderTypeFilter<$PrismaModel>
+  }
+
+  export type EnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderStatus | EnumOrderStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderStatusWithAggregatesFilter<$PrismaModel> | $Enums.OrderStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderStatusFilter<$PrismaModel>
+    _max?: NestedEnumOrderStatusFilter<$PrismaModel>
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type EnumSettlementStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.SettlementStatus | EnumSettlementStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumSettlementStatusFilter<$PrismaModel> | $Enums.SettlementStatus
+  }
+
+  export type MatchExecutionCountOrderByAggregateInput = {
+    matchId?: SortOrder
+    buyOrderId?: SortOrder
+    sellOrderId?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    buyerId?: SortOrder
+    sellerId?: SortOrder
+    isBuyerMaker?: SortOrder
+    status?: SortOrder
+    settledAt?: SortOrder
+  }
+
+  export type MatchExecutionAvgOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+  }
+
+  export type MatchExecutionMaxOrderByAggregateInput = {
+    matchId?: SortOrder
+    buyOrderId?: SortOrder
+    sellOrderId?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    buyerId?: SortOrder
+    sellerId?: SortOrder
+    isBuyerMaker?: SortOrder
+    status?: SortOrder
+    settledAt?: SortOrder
+  }
+
+  export type MatchExecutionMinOrderByAggregateInput = {
+    matchId?: SortOrder
+    buyOrderId?: SortOrder
+    sellOrderId?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    buyerId?: SortOrder
+    sellerId?: SortOrder
+    isBuyerMaker?: SortOrder
+    status?: SortOrder
+    settledAt?: SortOrder
+  }
+
+  export type MatchExecutionSumOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type EnumSettlementStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SettlementStatus | EnumSettlementStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumSettlementStatusWithAggregatesFilter<$PrismaModel> | $Enums.SettlementStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumSettlementStatusFilter<$PrismaModel>
+    _max?: NestedEnumSettlementStatusFilter<$PrismaModel>
+  }
+
+  export type TradeCountOrderByAggregateInput = {
+    id?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    isBuyerMaker?: SortOrder
+    timestamp?: SortOrder
+  }
+
+  export type TradeAvgOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+  }
+
+  export type TradeMaxOrderByAggregateInput = {
+    id?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    isBuyerMaker?: SortOrder
+    timestamp?: SortOrder
+  }
+
+  export type TradeMinOrderByAggregateInput = {
+    id?: SortOrder
+    symbol?: SortOrder
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
+    isBuyerMaker?: SortOrder
+    timestamp?: SortOrder
+  }
+
+  export type TradeSumOrderByAggregateInput = {
+    price?: SortOrder
+    quantity?: SortOrder
+    quoteQuantity?: SortOrder
   }
 
   export type EnumTransactionTypeFilter<$PrismaModel = never> = {
@@ -9857,8 +13318,6 @@ export namespace Prisma {
     ticker?: SortOrder
     quantity?: SortOrder
     price?: SortOrder
-    fromWalletId?: SortOrder
-    toWalletId?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -9880,8 +13339,6 @@ export namespace Prisma {
     ticker?: SortOrder
     quantity?: SortOrder
     price?: SortOrder
-    fromWalletId?: SortOrder
-    toWalletId?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -9896,8 +13353,6 @@ export namespace Prisma {
     ticker?: SortOrder
     quantity?: SortOrder
     price?: SortOrder
-    fromWalletId?: SortOrder
-    toWalletId?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -9944,53 +13399,6 @@ export namespace Prisma {
     _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
-  export type TradesIdTimestampCompoundUniqueInput = {
-    id: string
-    timestamp: Date | string
-  }
-
-  export type TradesCountOrderByAggregateInput = {
-    id?: SortOrder
-    market?: SortOrder
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-    isBuyerMaker?: SortOrder
-    timestamp?: SortOrder
-  }
-
-  export type TradesAvgOrderByAggregateInput = {
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-  }
-
-  export type TradesMaxOrderByAggregateInput = {
-    id?: SortOrder
-    market?: SortOrder
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-    isBuyerMaker?: SortOrder
-    timestamp?: SortOrder
-  }
-
-  export type TradesMinOrderByAggregateInput = {
-    id?: SortOrder
-    market?: SortOrder
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-    isBuyerMaker?: SortOrder
-    timestamp?: SortOrder
-  }
-
-  export type TradesSumOrderByAggregateInput = {
-    price?: SortOrder
-    quantity?: SortOrder
-    quoteQuantity?: SortOrder
-  }
-
   export type AccountCreateNestedManyWithoutUserInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -10004,10 +13412,11 @@ export namespace Prisma {
     connect?: WalletWhereUniqueInput
   }
 
-  export type TokenCreateNestedOneWithoutUserInput = {
-    create?: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
-    connectOrCreate?: TokenCreateOrConnectWithoutUserInput
-    connect?: TokenWhereUniqueInput
+  export type OrderCreateNestedManyWithoutUserInput = {
+    create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
+    createMany?: OrderCreateManyUserInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
   export type AccountUncheckedCreateNestedManyWithoutUserInput = {
@@ -10023,10 +13432,11 @@ export namespace Prisma {
     connect?: WalletWhereUniqueInput
   }
 
-  export type TokenUncheckedCreateNestedOneWithoutUserInput = {
-    create?: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
-    connectOrCreate?: TokenCreateOrConnectWithoutUserInput
-    connect?: TokenWhereUniqueInput
+  export type OrderUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
+    createMany?: OrderCreateManyUserInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -10039,10 +13449,6 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -10073,14 +13479,18 @@ export namespace Prisma {
     update?: XOR<XOR<WalletUpdateToOneWithWhereWithoutUserInput, WalletUpdateWithoutUserInput>, WalletUncheckedUpdateWithoutUserInput>
   }
 
-  export type TokenUpdateOneWithoutUserNestedInput = {
-    create?: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
-    connectOrCreate?: TokenCreateOrConnectWithoutUserInput
-    upsert?: TokenUpsertWithoutUserInput
-    disconnect?: TokenWhereInput | boolean
-    delete?: TokenWhereInput | boolean
-    connect?: TokenWhereUniqueInput
-    update?: XOR<XOR<TokenUpdateToOneWithWhereWithoutUserInput, TokenUpdateWithoutUserInput>, TokenUncheckedUpdateWithoutUserInput>
+  export type OrderUpdateManyWithoutUserNestedInput = {
+    create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutUserInput | OrderUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: OrderCreateManyUserInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutUserInput | OrderUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutUserInput | OrderUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
   export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
@@ -10107,14 +13517,18 @@ export namespace Prisma {
     update?: XOR<XOR<WalletUpdateToOneWithWhereWithoutUserInput, WalletUpdateWithoutUserInput>, WalletUncheckedUpdateWithoutUserInput>
   }
 
-  export type TokenUncheckedUpdateOneWithoutUserNestedInput = {
-    create?: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
-    connectOrCreate?: TokenCreateOrConnectWithoutUserInput
-    upsert?: TokenUpsertWithoutUserInput
-    disconnect?: TokenWhereInput | boolean
-    delete?: TokenWhereInput | boolean
-    connect?: TokenWhereUniqueInput
-    update?: XOR<XOR<TokenUpdateToOneWithWhereWithoutUserInput, TokenUpdateWithoutUserInput>, TokenUncheckedUpdateWithoutUserInput>
+  export type OrderUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput> | OrderCreateWithoutUserInput[] | OrderUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutUserInput | OrderCreateOrConnectWithoutUserInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutUserInput | OrderUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: OrderCreateManyUserInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutUserInput | OrderUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutUserInput | OrderUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutAccountsInput = {
@@ -10137,6 +13551,52 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutAccountsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAccountsInput, UserUpdateWithoutAccountsInput>, UserUncheckedUpdateWithoutAccountsInput>
+  }
+
+  export type OrderCreateNestedManyWithoutStockInput = {
+    create?: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput> | OrderCreateWithoutStockInput[] | OrderUncheckedCreateWithoutStockInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutStockInput | OrderCreateOrConnectWithoutStockInput[]
+    createMany?: OrderCreateManyStockInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
+  export type OrderUncheckedCreateNestedManyWithoutStockInput = {
+    create?: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput> | OrderCreateWithoutStockInput[] | OrderUncheckedCreateWithoutStockInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutStockInput | OrderCreateOrConnectWithoutStockInput[]
+    createMany?: OrderCreateManyStockInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
+  export type EnumStockStatusFieldUpdateOperationsInput = {
+    set?: $Enums.StockStatus
+  }
+
+  export type OrderUpdateManyWithoutStockNestedInput = {
+    create?: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput> | OrderCreateWithoutStockInput[] | OrderUncheckedCreateWithoutStockInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutStockInput | OrderCreateOrConnectWithoutStockInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutStockInput | OrderUpsertWithWhereUniqueWithoutStockInput[]
+    createMany?: OrderCreateManyStockInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutStockInput | OrderUpdateWithWhereUniqueWithoutStockInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutStockInput | OrderUpdateManyWithWhereWithoutStockInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
+  export type OrderUncheckedUpdateManyWithoutStockNestedInput = {
+    create?: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput> | OrderCreateWithoutStockInput[] | OrderUncheckedCreateWithoutStockInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutStockInput | OrderCreateOrConnectWithoutStockInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutStockInput | OrderUpsertWithWhereUniqueWithoutStockInput[]
+    createMany?: OrderCreateManyStockInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutStockInput | OrderUpdateWithWhereUniqueWithoutStockInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutStockInput | OrderUpdateManyWithWhereWithoutStockInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutWalletInput = {
@@ -10203,18 +13663,52 @@ export namespace Prisma {
     deleteMany?: TransactionScalarWhereInput | TransactionScalarWhereInput[]
   }
 
-  export type UserCreateNestedOneWithoutTokenInput = {
-    create?: XOR<UserCreateWithoutTokenInput, UserUncheckedCreateWithoutTokenInput>
-    connectOrCreate?: UserCreateOrConnectWithoutTokenInput
+  export type UserCreateNestedOneWithoutOrdersInput = {
+    create?: XOR<UserCreateWithoutOrdersInput, UserUncheckedCreateWithoutOrdersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOrdersInput
     connect?: UserWhereUniqueInput
   }
 
-  export type UserUpdateOneRequiredWithoutTokenNestedInput = {
-    create?: XOR<UserCreateWithoutTokenInput, UserUncheckedCreateWithoutTokenInput>
-    connectOrCreate?: UserCreateOrConnectWithoutTokenInput
-    upsert?: UserUpsertWithoutTokenInput
+  export type StockCreateNestedOneWithoutOrdersInput = {
+    create?: XOR<StockCreateWithoutOrdersInput, StockUncheckedCreateWithoutOrdersInput>
+    connectOrCreate?: StockCreateOrConnectWithoutOrdersInput
+    connect?: StockWhereUniqueInput
+  }
+
+  export type EnumOrderSideFieldUpdateOperationsInput = {
+    set?: $Enums.OrderSide
+  }
+
+  export type EnumOrderTypeFieldUpdateOperationsInput = {
+    set?: $Enums.OrderType
+  }
+
+  export type EnumOrderStatusFieldUpdateOperationsInput = {
+    set?: $Enums.OrderStatus
+  }
+
+  export type UserUpdateOneRequiredWithoutOrdersNestedInput = {
+    create?: XOR<UserCreateWithoutOrdersInput, UserUncheckedCreateWithoutOrdersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutOrdersInput
+    upsert?: UserUpsertWithoutOrdersInput
     connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutTokenInput, UserUpdateWithoutTokenInput>, UserUncheckedUpdateWithoutTokenInput>
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutOrdersInput, UserUpdateWithoutOrdersInput>, UserUncheckedUpdateWithoutOrdersInput>
+  }
+
+  export type StockUpdateOneRequiredWithoutOrdersNestedInput = {
+    create?: XOR<StockCreateWithoutOrdersInput, StockUncheckedCreateWithoutOrdersInput>
+    connectOrCreate?: StockCreateOrConnectWithoutOrdersInput
+    upsert?: StockUpsertWithoutOrdersInput
+    connect?: StockWhereUniqueInput
+    update?: XOR<XOR<StockUpdateToOneWithWhereWithoutOrdersInput, StockUpdateWithoutOrdersInput>, StockUncheckedUpdateWithoutOrdersInput>
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type EnumSettlementStatusFieldUpdateOperationsInput = {
+    set?: $Enums.SettlementStatus
   }
 
   export type WalletCreateNestedOneWithoutTransactionsInput = {
@@ -10284,11 +13778,6 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -10372,14 +13861,6 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -10419,6 +13900,23 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedEnumStockStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.StockStatus | EnumStockStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumStockStatusFilter<$PrismaModel> | $Enums.StockStatus
+  }
+
+  export type NestedEnumStockStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.StockStatus | EnumStockStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.StockStatus[] | ListEnumStockStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumStockStatusWithAggregatesFilter<$PrismaModel> | $Enums.StockStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumStockStatusFilter<$PrismaModel>
+    _max?: NestedEnumStockStatusFilter<$PrismaModel>
   }
 
   export type NestedDecimalFilter<$PrismaModel = never> = {
@@ -10469,6 +13967,87 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedEnumOrderSideFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderSide | EnumOrderSideFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderSideFilter<$PrismaModel> | $Enums.OrderSide
+  }
+
+  export type NestedEnumOrderTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderType | EnumOrderTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderTypeFilter<$PrismaModel> | $Enums.OrderType
+  }
+
+  export type NestedEnumOrderStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderStatus | EnumOrderStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderStatusFilter<$PrismaModel> | $Enums.OrderStatus
+  }
+
+  export type NestedEnumOrderSideWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderSide | EnumOrderSideFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderSide[] | ListEnumOrderSideFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderSideWithAggregatesFilter<$PrismaModel> | $Enums.OrderSide
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderSideFilter<$PrismaModel>
+    _max?: NestedEnumOrderSideFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrderTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderType | EnumOrderTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderType[] | ListEnumOrderTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderTypeWithAggregatesFilter<$PrismaModel> | $Enums.OrderType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderTypeFilter<$PrismaModel>
+    _max?: NestedEnumOrderTypeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderStatus | EnumOrderStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderStatus[] | ListEnumOrderStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderStatusWithAggregatesFilter<$PrismaModel> | $Enums.OrderStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderStatusFilter<$PrismaModel>
+    _max?: NestedEnumOrderStatusFilter<$PrismaModel>
+  }
+
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedEnumSettlementStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.SettlementStatus | EnumSettlementStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumSettlementStatusFilter<$PrismaModel> | $Enums.SettlementStatus
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedEnumSettlementStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SettlementStatus | EnumSettlementStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SettlementStatus[] | ListEnumSettlementStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumSettlementStatusWithAggregatesFilter<$PrismaModel> | $Enums.SettlementStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumSettlementStatusFilter<$PrismaModel>
+    _max?: NestedEnumSettlementStatusFilter<$PrismaModel>
   }
 
   export type NestedEnumTransactionTypeFilter<$PrismaModel = never> = {
@@ -10589,21 +14168,44 @@ export namespace Prisma {
     create: XOR<WalletCreateWithoutUserInput, WalletUncheckedCreateWithoutUserInput>
   }
 
-  export type TokenCreateWithoutUserInput = {
+  export type OrderCreateWithoutUserInput = {
     id?: string
-    verifyToken?: string | null
-    verifyTokenExp?: Date | string | null
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    stock: StockCreateNestedOneWithoutOrdersInput
   }
 
-  export type TokenUncheckedCreateWithoutUserInput = {
+  export type OrderUncheckedCreateWithoutUserInput = {
     id?: string
-    verifyToken?: string | null
-    verifyTokenExp?: Date | string | null
+    symbol: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
-  export type TokenCreateOrConnectWithoutUserInput = {
-    where: TokenWhereUniqueInput
-    create: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
+  export type OrderCreateOrConnectWithoutUserInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput>
+  }
+
+  export type OrderCreateManyUserInputEnvelope = {
+    data: OrderCreateManyUserInput | OrderCreateManyUserInput[]
+    skipDuplicates?: boolean
   }
 
   export type AccountUpsertWithWhereUniqueWithoutUserInput = {
@@ -10665,27 +14267,39 @@ export namespace Prisma {
     transactions?: TransactionUncheckedUpdateManyWithoutWalletNestedInput
   }
 
-  export type TokenUpsertWithoutUserInput = {
-    update: XOR<TokenUpdateWithoutUserInput, TokenUncheckedUpdateWithoutUserInput>
-    create: XOR<TokenCreateWithoutUserInput, TokenUncheckedCreateWithoutUserInput>
-    where?: TokenWhereInput
+  export type OrderUpsertWithWhereUniqueWithoutUserInput = {
+    where: OrderWhereUniqueInput
+    update: XOR<OrderUpdateWithoutUserInput, OrderUncheckedUpdateWithoutUserInput>
+    create: XOR<OrderCreateWithoutUserInput, OrderUncheckedCreateWithoutUserInput>
   }
 
-  export type TokenUpdateToOneWithWhereWithoutUserInput = {
-    where?: TokenWhereInput
-    data: XOR<TokenUpdateWithoutUserInput, TokenUncheckedUpdateWithoutUserInput>
+  export type OrderUpdateWithWhereUniqueWithoutUserInput = {
+    where: OrderWhereUniqueInput
+    data: XOR<OrderUpdateWithoutUserInput, OrderUncheckedUpdateWithoutUserInput>
   }
 
-  export type TokenUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  export type OrderUpdateManyWithWhereWithoutUserInput = {
+    where: OrderScalarWhereInput
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutUserInput>
   }
 
-  export type TokenUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    verifyToken?: NullableStringFieldUpdateOperationsInput | string | null
-    verifyTokenExp?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  export type OrderScalarWhereInput = {
+    AND?: OrderScalarWhereInput | OrderScalarWhereInput[]
+    OR?: OrderScalarWhereInput[]
+    NOT?: OrderScalarWhereInput | OrderScalarWhereInput[]
+    id?: StringFilter<"Order"> | string
+    userId?: StringFilter<"Order"> | string
+    symbol?: StringFilter<"Order"> | string
+    side?: EnumOrderSideFilter<"Order"> | $Enums.OrderSide
+    orderType?: EnumOrderTypeFilter<"Order"> | $Enums.OrderType
+    price?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    exchangeOrderId?: StringNullableFilter<"Order"> | string | null
+    createdAt?: DateTimeFilter<"Order"> | Date | string
+    updatedAt?: DateTimeFilter<"Order"> | Date | string
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -10695,11 +14309,10 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     wallet?: WalletCreateNestedOneWithoutUserInput
-    token?: TokenCreateNestedOneWithoutUserInput
+    orders?: OrderCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -10709,11 +14322,10 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
-    token?: TokenUncheckedCreateNestedOneWithoutUserInput
+    orders?: OrderUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -10739,11 +14351,10 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     wallet?: WalletUpdateOneWithoutUserNestedInput
-    token?: TokenUpdateOneWithoutUserNestedInput
+    orders?: OrderUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -10753,11 +14364,66 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
-    token?: TokenUncheckedUpdateOneWithoutUserNestedInput
+    orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type OrderCreateWithoutStockInput = {
+    id?: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutOrdersInput
+  }
+
+  export type OrderUncheckedCreateWithoutStockInput = {
+    id?: string
+    userId: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderCreateOrConnectWithoutStockInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput>
+  }
+
+  export type OrderCreateManyStockInputEnvelope = {
+    data: OrderCreateManyStockInput | OrderCreateManyStockInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrderUpsertWithWhereUniqueWithoutStockInput = {
+    where: OrderWhereUniqueInput
+    update: XOR<OrderUpdateWithoutStockInput, OrderUncheckedUpdateWithoutStockInput>
+    create: XOR<OrderCreateWithoutStockInput, OrderUncheckedCreateWithoutStockInput>
+  }
+
+  export type OrderUpdateWithWhereUniqueWithoutStockInput = {
+    where: OrderWhereUniqueInput
+    data: XOR<OrderUpdateWithoutStockInput, OrderUncheckedUpdateWithoutStockInput>
+  }
+
+  export type OrderUpdateManyWithWhereWithoutStockInput = {
+    where: OrderScalarWhereInput
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutStockInput>
   }
 
   export type UserCreateWithoutWalletInput = {
@@ -10767,11 +14433,10 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountCreateNestedManyWithoutUserInput
-    token?: TokenCreateNestedOneWithoutUserInput
+    orders?: OrderCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutWalletInput = {
@@ -10781,11 +14446,10 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
-    token?: TokenUncheckedCreateNestedOneWithoutUserInput
+    orders?: OrderUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutWalletInput = {
@@ -10801,10 +14465,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
   }
 
@@ -10816,10 +14478,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
   }
 
@@ -10851,11 +14511,10 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUpdateManyWithoutUserNestedInput
-    token?: TokenUpdateOneWithoutUserNestedInput
+    orders?: OrderUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWalletInput = {
@@ -10865,11 +14524,10 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
-    token?: TokenUncheckedUpdateOneWithoutUserNestedInput
+    orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TransactionUpsertWithWhereUniqueWithoutWalletInput = {
@@ -10900,83 +14558,133 @@ export namespace Prisma {
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     ticker?: StringNullableFilter<"Transaction"> | string | null
-    quantity?: IntNullableFilter<"Transaction"> | number | null
+    quantity?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
     price?: DecimalNullableFilter<"Transaction"> | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: StringNullableFilter<"Transaction"> | string | null
-    toWalletId?: StringNullableFilter<"Transaction"> | string | null
     createdAt?: DateTimeFilter<"Transaction"> | Date | string
   }
 
-  export type UserCreateWithoutTokenInput = {
+  export type UserCreateWithoutOrdersInput = {
     id?: string
     name?: string | null
     email?: string | null
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountCreateNestedManyWithoutUserInput
     wallet?: WalletCreateNestedOneWithoutUserInput
   }
 
-  export type UserUncheckedCreateWithoutTokenInput = {
+  export type UserUncheckedCreateWithoutOrdersInput = {
     id?: string
     name?: string | null
     email?: string | null
     emailVerified?: Date | string | null
     image?: string | null
     password?: string | null
-    isVerified?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     wallet?: WalletUncheckedCreateNestedOneWithoutUserInput
   }
 
-  export type UserCreateOrConnectWithoutTokenInput = {
+  export type UserCreateOrConnectWithoutOrdersInput = {
     where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutTokenInput, UserUncheckedCreateWithoutTokenInput>
+    create: XOR<UserCreateWithoutOrdersInput, UserUncheckedCreateWithoutOrdersInput>
   }
 
-  export type UserUpsertWithoutTokenInput = {
-    update: XOR<UserUpdateWithoutTokenInput, UserUncheckedUpdateWithoutTokenInput>
-    create: XOR<UserCreateWithoutTokenInput, UserUncheckedCreateWithoutTokenInput>
+  export type StockCreateWithoutOrdersInput = {
+    symbol: string
+    companyName: string
+    status?: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type StockUncheckedCreateWithoutOrdersInput = {
+    symbol: string
+    companyName: string
+    status?: $Enums.StockStatus
+    baseAsset: string
+    quoteAsset?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type StockCreateOrConnectWithoutOrdersInput = {
+    where: StockWhereUniqueInput
+    create: XOR<StockCreateWithoutOrdersInput, StockUncheckedCreateWithoutOrdersInput>
+  }
+
+  export type UserUpsertWithoutOrdersInput = {
+    update: XOR<UserUpdateWithoutOrdersInput, UserUncheckedUpdateWithoutOrdersInput>
+    create: XOR<UserCreateWithoutOrdersInput, UserUncheckedCreateWithoutOrdersInput>
     where?: UserWhereInput
   }
 
-  export type UserUpdateToOneWithWhereWithoutTokenInput = {
+  export type UserUpdateToOneWithWhereWithoutOrdersInput = {
     where?: UserWhereInput
-    data: XOR<UserUpdateWithoutTokenInput, UserUncheckedUpdateWithoutTokenInput>
+    data: XOR<UserUpdateWithoutOrdersInput, UserUncheckedUpdateWithoutOrdersInput>
   }
 
-  export type UserUpdateWithoutTokenInput = {
+  export type UserUpdateWithoutOrdersInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUpdateManyWithoutUserNestedInput
     wallet?: WalletUpdateOneWithoutUserNestedInput
   }
 
-  export type UserUncheckedUpdateWithoutTokenInput = {
+  export type UserUncheckedUpdateWithoutOrdersInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    isVerified?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     wallet?: WalletUncheckedUpdateOneWithoutUserNestedInput
+  }
+
+  export type StockUpsertWithoutOrdersInput = {
+    update: XOR<StockUpdateWithoutOrdersInput, StockUncheckedUpdateWithoutOrdersInput>
+    create: XOR<StockCreateWithoutOrdersInput, StockUncheckedCreateWithoutOrdersInput>
+    where?: StockWhereInput
+  }
+
+  export type StockUpdateToOneWithWhereWithoutOrdersInput = {
+    where?: StockWhereInput
+    data: XOR<StockUpdateWithoutOrdersInput, StockUncheckedUpdateWithoutOrdersInput>
+  }
+
+  export type StockUpdateWithoutOrdersInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type StockUncheckedUpdateWithoutOrdersInput = {
+    symbol?: StringFieldUpdateOperationsInput | string
+    companyName?: StringFieldUpdateOperationsInput | string
+    status?: EnumStockStatusFieldUpdateOperationsInput | $Enums.StockStatus
+    baseAsset?: StringFieldUpdateOperationsInput | string
+    quoteAsset?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type WalletCreateWithoutTransactionsInput = {
@@ -11037,6 +14745,21 @@ export namespace Prisma {
     session_state?: string | null
   }
 
+  export type OrderCreateManyUserInput = {
+    id?: string
+    symbol: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type AccountUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
@@ -11079,6 +14802,111 @@ export namespace Prisma {
     session_state?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type OrderUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    stock?: StockUpdateOneRequiredWithoutOrdersNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    symbol?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderCreateManyStockInput = {
+    id?: string
+    userId: string
+    side: $Enums.OrderSide
+    orderType: $Enums.OrderType
+    price: Decimal | DecimalJsLike | number | string
+    quantity: Decimal | DecimalJsLike | number | string
+    filledQty?: Decimal | DecimalJsLike | number | string
+    remainingQty: Decimal | DecimalJsLike | number | string
+    status?: $Enums.OrderStatus
+    exchangeOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderUpdateWithoutStockInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutStockInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderUncheckedUpdateManyWithoutStockInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    side?: EnumOrderSideFieldUpdateOperationsInput | $Enums.OrderSide
+    orderType?: EnumOrderTypeFieldUpdateOperationsInput | $Enums.OrderType
+    price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    quantity?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    filledQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remainingQty?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    exchangeOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type TransactionCreateManyWalletInput = {
     id?: string
     type: $Enums.TransactionType
@@ -11087,10 +14915,8 @@ export namespace Prisma {
     amount: Decimal | DecimalJsLike | number | string
     balanceAfter: Decimal | DecimalJsLike | number | string
     ticker?: string | null
-    quantity?: number | null
+    quantity?: Decimal | DecimalJsLike | number | string | null
     price?: Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: string | null
-    toWalletId?: string | null
     createdAt?: Date | string
   }
 
@@ -11102,10 +14928,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -11117,10 +14941,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -11132,10 +14954,8 @@ export namespace Prisma {
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     balanceAfter?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     ticker?: NullableStringFieldUpdateOperationsInput | string | null
-    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    quantity?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     price?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
-    fromWalletId?: NullableStringFieldUpdateOperationsInput | string | null
-    toWalletId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

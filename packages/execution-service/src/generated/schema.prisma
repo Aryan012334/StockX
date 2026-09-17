@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// StockX — Prisma Schema
+// Plain PostgreSQL (no TimescaleDB extensions required)
 
 generator client {
   provider = "prisma-client-js"
@@ -13,23 +10,21 @@ datasource db {
   provider = "postgresql"
 }
 
+// ---------------------------------------------------------------------------
+// AUTH
+// ---------------------------------------------------------------------------
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?
 
-  // Credentials login support
-  password   String?
-  isVerified Boolean @default(false)
-
-  // NextAuth relations
   accounts Account[]
-
-  //business logic
-  wallet Wallet?
-  token  Token?
+  wallet   Wallet?
+  orders   Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -54,23 +49,135 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
+// ---------------------------------------------------------------------------
+// STOCK SERVICE — tradeable instruments
+// ---------------------------------------------------------------------------
+
+model Stock {
+  symbol      String      @id // e.g. "RIL", "TATA", "SOL"
+  companyName String
+  status      StockStatus @default(ACTIVE)
+  baseAsset   String // same as symbol
+  quoteAsset  String      @default("INR")
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+enum StockStatus {
+  ACTIVE
+  DELISTED
+}
+
+// ---------------------------------------------------------------------------
+// WALLET — user funds and holdings
+// ---------------------------------------------------------------------------
+
 model Wallet {
   userId       String        @id
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance      Decimal       @default(50000)
-  assetsHeld   Json          @default("{}")
+  balance      Decimal       @default(50000) // quote currency (INR) balance
+  assetsHeld   Json          @default("{}") // { "RIL": 10, "TATA": 5 }
   transactions Transaction[]
   updatedAt    DateTime?     @updatedAt
 }
 
-model Token {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+// ---------------------------------------------------------------------------
+// ORDER SERVICE — durable order store
+// ---------------------------------------------------------------------------
 
-  verifyToken    String?
-  verifyTokenExp DateTime?
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  symbol          String
+  stock           Stock       @relation(fields: [symbol], references: [symbol])
+  side            OrderSide
+  orderType       OrderType
+  price           Decimal // limit price (0 for market)
+  quantity        Decimal
+  filledQty       Decimal     @default(0)
+  remainingQty    Decimal
+  status          OrderStatus @default(OPEN)
+  // exchangeOrderId: the ID assigned by the exchange (Matcher Service).
+  // Stored separately from the client-generated id so both identifiers
+  // are visible — matches the CortexCookie Order DB concept of tracking
+  // both the internal order ID and the exchange order ID.
+  exchangeOrderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([symbol, status])
 }
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+}
+
+enum OrderStatus {
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+// ---------------------------------------------------------------------------
+// MATCH EXECUTION SERVICE — settlement records + idempotency
+// ---------------------------------------------------------------------------
+
+// One row per match event — also acts as the idempotency key.
+// A unique constraint on matchId prevents duplicate settlement.
+model MatchExecution {
+  matchId       String  @id // tradeId from the matcher — unique per match
+  buyOrderId    String
+  sellOrderId   String
+  symbol        String
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  buyerId       String
+  sellerId      String
+  isBuyerMaker  Boolean
+
+  status    SettlementStatus @default(SETTLED)
+  settledAt DateTime         @default(now())
+}
+
+enum SettlementStatus {
+  SETTLED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// PUBLIC TRADE FEED
+// ---------------------------------------------------------------------------
+
+model Trade {
+  id            String   @id @default(uuid())
+  symbol        String // e.g. "RIL_INR"
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  isBuyerMaker  Boolean
+  timestamp     DateTime @default(now())
+
+  @@index([symbol, timestamp(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// WALLET TRANSACTIONS — audit log of all financial movements
+// ---------------------------------------------------------------------------
 
 model Transaction {
   id           String              @id @default(cuid())
@@ -82,10 +189,8 @@ model Transaction {
   amount       Decimal
   balanceAfter Decimal
   ticker       String?
-  quantity     Int?
+  quantity     Decimal?
   price        Decimal?
-  fromWalletId String?
-  toWalletId   String?
   createdAt    DateTime            @default(now())
 }
 
@@ -98,20 +203,4 @@ enum TransactionCategory {
   SIGNUP_BONUS
   ORDER_BUY
   ORDER_SELL
-}
-
-model Trades {
-  id            String
-  market        String
-  price         Decimal
-  quantity      Decimal
-  quoteQuantity Decimal
-  isBuyerMaker  Boolean
-  timestamp     DateTime @default(now())
-
-  // Composite key required by TimescaleDB partitioning
-  @@id([id, timestamp])
-  // Essential index for fast filtering
-  @@index([market, timestamp(sort: Desc)])
-  @@map("trades")
 }
