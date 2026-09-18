@@ -5,7 +5,7 @@ import { useSession }           from "next-auth/react";
 import Link                     from "next/link";
 import { getHoldings, getWalletSummary } from "@/lib/utils/apiClient";
 import type { HoldingRecord }   from "@stockx/shared";
-import { Briefcase, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Briefcase, TrendingUp, TrendingDown, Clock, RefreshCcw } from "lucide-react";
 
 function fmt(v: number | null | undefined, dp = 2): string {
   if (v === null || v === undefined) return "--";
@@ -36,16 +36,29 @@ export default function PortfolioPage() {
   const [holdings,  setHoldings]  = useState<HoldingRecord[]>([]);
   const [cashBal,   setCashBal]   = useState<number | null>(null);
   const [loading,   setLoading]   = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+
+  const load = async (showLoading = false) => {
+    if (!userId) return;
+    if (showLoading) setLoading(true);
+    try {
+      const [h, w] = await Promise.all([getHoldings(userId), getWalletSummary(userId)]);
+      setHoldings(h);
+      setCashBal(w.availableCash);
+      setLastRefresh(new Date());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (status !== "authenticated" || !userId) return;
-    Promise.all([getHoldings(userId), getWalletSummary(userId)])
-      .then(([h, w]) => {
-        setHoldings(h);
-        setCashBal(w.availableCash);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    load(true);
+    // Auto-refresh every 5s so holdings update immediately after a trade
+    const interval = setInterval(() => load(false), 5000);
+    return () => clearInterval(interval);
   }, [userId, status]);
 
   if (status === "unauthenticated") {
@@ -66,11 +79,26 @@ export default function PortfolioPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-8">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Briefcase className="size-6 text-muted-foreground" />
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Portfolio</h1>
-          <p className="text-sm text-muted-foreground">Your open positions and performance</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Briefcase className="size-6 text-muted-foreground" />
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Portfolio</h1>
+            <p className="text-sm text-muted-foreground">Your open positions and performance</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {lastRefresh && (
+            <span className="text-xs text-muted-foreground">
+              Updated {lastRefresh.toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            onClick={() => load(false)}
+            className="text-zinc-500 hover:text-foreground transition"
+            title="Refresh">
+            <RefreshCcw className="size-4" />
+          </button>
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -153,7 +154,7 @@ function TickerTape({
       </div>
       <style jsx>{`
         .ticker-track {
-          animation: scroll-left 120s linear infinite;
+          animation: scroll-left 200s linear infinite;
           will-change: transform;
         }
         @keyframes scroll-left {
@@ -259,6 +260,9 @@ function MarketCard({
 
 // Page
 export default function LandingPage() {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
   const [liveTickers, setLiveTickers] = useState<MarketQuote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -369,7 +373,7 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link href="/trade/AAPL_USD">
+              <Link href={isLoggedIn ? "/trade/AAPL_USD" : "/signup"}>
                 <Button className="h-11 rounded-md bg-[var(--brand-blue)] px-6 text-sm font-medium text-white shadow-lg shadow-[var(--brand-blue)]/20 hover:bg-[var(--brand-blue)]/90">
                   Start trading
                   <ArrowRight className="ml-2 size-4" />
@@ -526,7 +530,7 @@ export default function LandingPage() {
                 zero financial risk.
               </p>
 
-              <Link href="/signup">
+              <Link href={isLoggedIn ? "/markets" : "/signup"}>
                 <Button className="h-10 rounded-md bg-[var(--brand-blue)] px-6 text-sm font-medium text-white shadow-lg shadow-[var(--brand-blue)]/20 hover:bg-[var(--brand-blue)]/90">
                   Start Trading
                   <ArrowRight className="ml-2 size-4" />
@@ -581,7 +585,7 @@ export default function LandingPage() {
             Free account, live prices, zero risk. Takes a minute.
           </p>
           <div className="mt-8 flex justify-center">
-            <Link href="/signup">
+            <Link href={isLoggedIn ? "/markets" : "/signup"}>
               <Button className="h-10 rounded-md bg-[var(--brand-blue)] px-6 text-sm font-medium text-white hover:bg-[var(--brand-blue)]/90 shadow-lg shadow-[var(--brand-blue)]/20">
                 Create free account
                 <ArrowRight className="ml-2 size-4" />
