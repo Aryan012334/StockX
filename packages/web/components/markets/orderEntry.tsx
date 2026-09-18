@@ -1,16 +1,15 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { isAxiosError } from "axios";
-import type { MarketQuote } from "@stockx/shared";
-import { getMarketQuote, placeOrder, getWalletSummary } from "@/lib/utils/apiClient";
+import { getMarketQuote, placeOrder, getWalletSummary, getHoldings } from "@/lib/utils/apiClient";
 import { MarketDataManager } from "@/lib/utils/MarketDataManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input }  from "@/components/ui/input";
 import { Label }  from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, RefreshCcw } from "lucide-react";
 
 interface OrderEntryProps { market: string; }
 
@@ -18,13 +17,11 @@ export function OrderEntry({ market }: OrderEntryProps) {
   const { data: session, status } = useSession();
 
   const symbol     = market.split("_")[0] ?? market;
-  const quoteAsset = market.split("_")[1] ?? "USD";
 
-  const [side,    setSide]    = useState<"buy" | "sell">("buy");
-  const [type,    setType]    = useState<"limit" | "market">("limit");
-  const [price,   setPrice]   = useState("");
-  const [quantity, setQty]    = useState("");
-  const [refPrice, setRefPrice] = useState(0);
+  const [side,      setSide]      = useState<"buy" | "sell">("buy");
+  const [type,      setType]      = useState<"limit" | "market">("limit");
+  const [price,     setPrice]     = useState("");
+  const [quantity,  setQty]       = useState("");
   const [livePrice, setLivePrice] = useState(0);
 
   const [availableCash,   setAvailableCash]   = useState(0);
@@ -39,14 +36,16 @@ export function OrderEntry({ market }: OrderEntryProps) {
   const isBuy  = side === "buy";
   const isLmt  = type === "limit";
 
-  // Reference market price
+  // -------------------------------------------------------------------------
+  // Load reference market price (Twelve Data cache)
+  // -------------------------------------------------------------------------
   useEffect(() => {
     getMarketQuote(symbol).then((q) => {
-      if (q?.price) { setRefPrice(q.price); setLivePrice(q.price); }
+      if (q?.price && q.price > 0) setLivePrice(q.price);
     });
   }, [symbol]);
 
-  // Live trade price via WS
+  // Live trade price via WebSocket (SimX trades)
   useEffect(() => {
     const manager    = MarketDataManager.getInstance();
     const callbackId = `OE-${market}`;
@@ -62,57 +61,106 @@ export function OrderEntry({ market }: OrderEntryProps) {
     };
   }, [market]);
 
-  // Load wallet
-  const refreshWallet = async () => {
+  // -------------------------------------------------------------------------
+  // Load wallet + holdings for this symbol
+  // -------------------------------------------------------------------------
+  const refreshWallet = useCallback(async () => {
     if (!userId) return;
     setWalletLoading(true);
     try {
-      const w = await getWalletSummary(userId);
-      setAvailableCash(w.availableCash);
-      // Holdings available shares would need a separate call — use 0 as safe default
-    } catch {}
-    finally { setWalletLoading(false); }
-  };
+      const [wallet, holdings] = await Promise.all([
+        getWalletSummary(userId),
+        getHoldings(userId),
+      ]);
+      setAvailableCash(wallet.availableCash);
 
-  useEffect(() => { if (session) refreshWallet(); }, [session]);
+      // Find available qty for the current symbol
+      const holding = holdings.find((h) => h.symbol === symbol);
+      setAvailableShares(holding ? holding.availableQty : 0);
+    } catch (err) {
+      console.error("[OrderEntry] Failed to load wallet:", err);
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [userId, symbol]);
 
-  const execPrice   = isLmt ? (parseFloat(price) || livePrice) : livePrice;
-  const qty         = parseFloat(quantity) || 0;
-  const totalValue  = execPrice * qty;
+  useEffect(() => {
+    if (status === "authenticated") refreshWallet();
+  }, [status, refreshWallet]);
+
+  // -------------------------------------------------------------------------
+  // Computed values
+  // -------------------------------------------------------------------------
+
+  // For market orders, use livePrice for display only.
+  // The backend uses MAX_SAFE_INT (buy) / 0 (sell) to guarantee execution.
+  // If no live price, use a very conservative display estimate.
+  const displayPrice = isLmt
+    ? (parseFloat(price) || 0)
+    : livePrice;
+
+  const qty        = parseFloat(quantity) || 0;
+  const totalValue = displayPrice * qty;
+
+  // BUY: check cash. SELL: check shares.
+  // For market orders with no price yet, only check qty > 0.
   const insufficient = isBuy
-    ? totalValue > availableCash
+    ? (displayPrice > 0 && totalValue > availableCash)
     : qty > availableShares;
 
-  const canSubmit = !!session && !submitting && qty > 0 && execPrice > 0 && !insufficient;
+  // Market orders can always be submitted if qty > 0 (price check bypassed)
+  const canSubmit =
+    !!session &&
+    !submitting &&
+    qty > 0 &&
+    !insufficient &&
+    (isLmt ? parseFloat(price) > 0 : true); // limit needs explicit price; market does not
 
+  // -------------------------------------------------------------------------
+  // Max button
+  // -------------------------------------------------------------------------
   function setMax() {
     if (isBuy) {
-      if (execPrice <= 0) return;
-      const maxQty = Math.floor((availableCash / execPrice) * 1000) / 1000;
+      const p = isLmt ? (parseFloat(price) || livePrice) : livePrice;
+      if (p <= 0) return;
+      const maxQty = Math.floor((availableCash / p) * 1000) / 1000;
       setQty(maxQty.toString());
     } else {
       setQty(availableShares.toString());
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Place order
+  // -------------------------------------------------------------------------
   async function handleSubmit() {
-    if (!canSubmit || !userId) return;
+    if (!userId) return;
     setSubmitting(true);
     setError(null);
     setResult(null);
+
+    // For market orders: use livePrice if available, else use a
+    // large/small sentinel that crosses the entire book
+    const submitPrice = isLmt
+      ? parseFloat(price).toString()
+      : livePrice > 0
+        ? (isBuy ? (livePrice * 1.05).toFixed(4) : (livePrice * 0.95).toFixed(4))
+        : (isBuy ? "999999" : "0.0001"); // extreme prices guarantee market fill
+
     try {
       const res = await placeOrder({
         userId,
         symbol:    market,
         side,
         orderType: type,
-        price:     execPrice.toString(),
+        price:     submitPrice,
         quantity:  qty.toString(),
         orderId:   crypto.randomUUID(),
       });
       setResult(res);
       setQty("");
       if (isLmt) setPrice("");
+      // Refresh wallet after order so balances update immediately
       await refreshWallet();
     } catch (err) {
       const msg =
@@ -124,6 +172,9 @@ export function OrderEntry({ market }: OrderEntryProps) {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Not logged in
+  // -------------------------------------------------------------------------
   if (status === "unauthenticated") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-4">
@@ -133,8 +184,12 @@ export function OrderEntry({ market }: OrderEntryProps) {
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
   return (
     <div className="flex flex-col gap-3 p-4">
+
       {/* Buy / Sell tabs */}
       <div className="flex rounded-lg border border-white/8 overflow-hidden">
         <button
@@ -153,7 +208,7 @@ export function OrderEntry({ market }: OrderEntryProps) {
         </button>
       </div>
 
-      {/* Order type */}
+      {/* Limit / Market tabs */}
       <Tabs value={type} onValueChange={(v) => setType(v as "limit" | "market")}>
         <TabsList className="grid w-full grid-cols-2 h-8 bg-white/5">
           <TabsTrigger value="limit"  className="text-xs">Limit</TabsTrigger>
@@ -171,7 +226,7 @@ export function OrderEntry({ market }: OrderEntryProps) {
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder={livePrice > 0 ? livePrice.toFixed(2) : "0.00"}
+                placeholder={livePrice > 0 ? livePrice.toFixed(2) : "enter price"}
                 className="pl-6 text-sm"
               />
             </div>
@@ -180,7 +235,11 @@ export function OrderEntry({ market }: OrderEntryProps) {
 
         <TabsContent value="market" className="mt-3">
           <div className="rounded-lg border border-white/8 bg-white/5 px-3 py-2 text-xs text-zinc-400">
-            Executes at best available price. Current reference: <span className="text-white">${livePrice.toFixed(2)}</span>
+            Executes immediately at best available price.
+            {livePrice > 0
+              ? <> Reference: <span className="text-white font-mono">${livePrice.toFixed(2)}</span></>
+              : <span className="text-amber-400"> No reference price — order will still execute against the order book.</span>
+            }
           </div>
         </TabsContent>
       </Tabs>
@@ -204,24 +263,33 @@ export function OrderEntry({ market }: OrderEntryProps) {
         />
       </div>
 
-      {/* Estimated total */}
+      {/* Balance row */}
       <div className="rounded-lg border border-white/8 bg-white/5 px-3 py-2 space-y-1.5 text-xs">
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Estimated Total</span>
-          <span className="font-mono text-white">${totalValue.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-zinc-500">{isBuy ? "Available Cash" : "Available Shares"}</span>
-          <span className={`font-mono ${insufficient ? "text-red-400" : "text-zinc-300"}`}>
-            {isBuy ? `$${availableCash.toFixed(2)}` : `${availableShares} ${symbol}`}
-          </span>
+        {displayPrice > 0 && qty > 0 && (
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Estimated Total</span>
+            <span className="font-mono text-white">${totalValue.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <span className="text-zinc-500">{isBuy ? "Available Cash" : `Available ${symbol}`}</span>
+          <div className="flex items-center gap-1.5">
+            <span className={`font-mono ${insufficient ? "text-red-400" : "text-zinc-300"}`}>
+              {isBuy
+                ? walletLoading ? "..." : `$${availableCash.toFixed(2)}`
+                : walletLoading ? "..." : `${availableShares} ${symbol}`}
+            </span>
+            <button onClick={refreshWallet} className="text-zinc-600 hover:text-zinc-400" title="Refresh">
+              <RefreshCcw className="size-3" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Submit */}
+      {/* Submit button */}
       <Button
         onClick={handleSubmit}
-        disabled={!canSubmit}
+        disabled={!canSubmit || walletLoading}
         className={`w-full font-semibold ${
           isBuy
             ? "bg-emerald-600 hover:bg-emerald-500 text-white disabled:bg-emerald-900/40 disabled:text-emerald-700"
@@ -230,21 +298,23 @@ export function OrderEntry({ market }: OrderEntryProps) {
         {submitting ? "Placing..." : isBuy ? `Buy ${symbol}` : `Sell ${symbol}`}
       </Button>
 
-      {/* Feedback */}
+      {/* Error */}
       {error && (
         <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
           {error}
         </div>
       )}
+
+      {/* Success */}
       {result && (
         <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
           <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" />
           {result.remainingQty === 0
-            ? `Filled ${result.executedQty} ${symbol} @ $${result.fills?.[0]?.price ?? "market"}`
+            ? `Filled ${result.executedQty} ${symbol}${result.fills?.[0]?.price ? ` @ $${Number(result.fills[0].price).toFixed(2)}` : ""}`
             : result.executedQty > 0
-              ? `Partially filled ${result.executedQty}/${Number(result.executedQty) + Number(result.remainingQty)} ${symbol}`
-              : `Order placed — resting on book`}
+              ? `Partial: filled ${result.executedQty}, ${result.remainingQty} resting on book`
+              : `Order placed — resting on book at ${isLmt ? `$${price}` : "market"}`}
         </div>
       )}
     </div>
