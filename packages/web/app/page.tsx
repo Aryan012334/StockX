@@ -153,7 +153,7 @@ function TickerTape({
       </div>
       <style jsx>{`
         .ticker-track {
-          animation: scroll-left 40s linear infinite;
+          animation: scroll-left 120s linear infinite;
           will-change: transform;
         }
         @keyframes scroll-left {
@@ -422,7 +422,7 @@ export default function LandingPage() {
                     "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
                 }}>
                 <Image
-                  src="/dash.webp"
+                  src="/dash.svg"
                   alt="StockX trading terminal"
                   fill
                   className="object-contain"

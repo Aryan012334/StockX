@@ -230,22 +230,42 @@ export async function batchRefreshAllQuotes(): Promise<void> {
 
   if (stocks.length === 0) return;
 
-  const symbols = stocks.map((s) => s.symbol).join(",");
-  console.log(`[MarketData] Batch refreshing reference quotes for ${stocks.length} stocks...`);
+  // Free tier: 8 API credits per minute, 800 per day.
+  // Each symbol in a batch = 1 credit. So max 8 symbols per call.
+  // Strategy: rotate through all stocks 8 at a time on each 15-min tick.
+  // 153 stocks ÷ 8 = ~20 chunks → full refresh in ~20 × 15 min = ~5 hours.
+  // Redis TTL keeps prices fresh; DB stores last seen value permanently.
+
+  const CHUNK_SIZE = 8;
+  const redis      = await getRedis();
+
+  // Build chunks
+  const chunks: string[][] = [];
+  for (let i = 0; i < stocks.length; i += CHUNK_SIZE) {
+    chunks.push(stocks.slice(i, i + CHUNK_SIZE).map((s) => s.symbol));
+  }
+
+  // Rotate: process one chunk per call, track index in Redis
+  const chunkIdxKey = "mq:batch:chunk_idx";
+  const idxStr      = await redis.get(chunkIdxKey);
+  const chunkIdx    = idxStr ? (parseInt(idxStr) % chunks.length) : 0;
+  const chunk       = chunks[chunkIdx]!;
+  await redis.set(chunkIdxKey, String((chunkIdx + 1) % chunks.length));
+
+  const symbolStr = chunk.join(",");
+  console.log(`[MarketData] Refreshing chunk ${chunkIdx + 1}/${chunks.length} (${symbolStr})`);
 
   try {
     const data = await fetchJson(
-      `${TWELVE_DATA_BASE}/quote?symbol=${encodeURIComponent(symbols)}&apikey=${API_KEY}`,
+      `${TWELVE_DATA_BASE}/quote?symbol=${encodeURIComponent(symbolStr)}&apikey=${API_KEY}`,
     );
 
-    // Single-symbol response is wrapped differently than batch
-    const results: Record<string, any> = stocks.length === 1
-      ? { [stocks[0]!.symbol]: data }
+    // Single-symbol response differs from batch
+    const results: Record<string, any> = chunk.length === 1
+      ? { [chunk[0]!]: data }
       : data;
 
-    const redis = await getRedis();
     let updated = 0;
-
     for (const [sym, raw] of Object.entries(results)) {
       const q = parseQuote(sym, raw);
       if (q) {
@@ -254,7 +274,7 @@ export async function batchRefreshAllQuotes(): Promise<void> {
         updated++;
       }
     }
-    console.log(`[MarketData] Batch complete: ${updated}/${stocks.length} quotes updated`);
+    console.log(`[MarketData] Chunk ${chunkIdx + 1} done: ${updated}/${chunk.length} updated`);
   } catch (err) {
     console.error("[MarketData] Batch refresh failed:", err);
   }
