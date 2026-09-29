@@ -84,6 +84,7 @@ temp/
 # ===============================
 *.swp
 *.swo
+.daily_push_state.json
 
 #Engine Snapshots
 snapshot.json
