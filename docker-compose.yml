@@ -1,0 +1,146 @@
+# StockX — Docker Compose
+# Services map directly to the CortexCookie architecture:
+#
+#   postgres          — settlement DB (plain PostgreSQL 17, no TimescaleDB)
+#   redis             — message bus (API Gateway ↔ Matcher, pub/sub for Realtime)
+#   api-gateway       — single entry point; routes to matcher and DB
+#   matcher-service   — in-memory order books, price-time priority matching
+#   execution-service — atomic settlement, idempotency, Order/Trade persistence
+#   realtime-service  — WebSocket server; bridges Redis pub/sub to browsers
+#   web               — Next.js frontend
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: stockx-postgres
+    env_file: .env
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test:         ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval:     30s
+      timeout:      5s
+      retries:      5
+      start_period: 10s
+    networks:
+      - stockx
+
+  redis:
+    image: redis:8-alpine
+    container_name: stockx-redis
+    command:
+      - redis-server
+      - --save ""
+      - --appendonly no
+    restart: unless-stopped
+    healthcheck:
+      test:         ["CMD", "redis-cli", "ping"]
+      interval:     30s
+      timeout:      5s
+      retries:      5
+      start_period: 10s
+    networks:
+      - stockx
+
+  # ---------------------------------------------------------------------------
+  # Application services
+  # ---------------------------------------------------------------------------
+
+  api-gateway:
+    build:
+      context:    .
+      dockerfile: packages/api-gateway/Dockerfile
+    container_name: stockx-api-gateway
+    env_file: .env
+    environment:
+      PORT: 3001
+      TWELVE_DATA_API_KEY: ${TWELVE_DATA_API_KEY:-}
+    ports:
+      - "127.0.0.1:13001:3001"
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks:
+      - stockx
+
+  matcher-service:
+    build:
+      context:    .
+      dockerfile: packages/matcher-service/Dockerfile
+    container_name: stockx-matcher-service
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks:
+      - stockx
+
+  execution-service:
+    build:
+      context:    .
+      dockerfile: packages/execution-service/Dockerfile
+    container_name: stockx-execution-service
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks:
+      - stockx
+
+  realtime-service:
+    build:
+      context:    .
+      dockerfile: packages/realtime-service/Dockerfile
+    container_name: stockx-realtime-service
+    env_file: .env
+    environment:
+      WS_PORT: 3002
+    ports:
+      - "127.0.0.1:13002:3002"
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    networks:
+      - stockx
+
+  web:
+    build:
+      context:    .
+      dockerfile: packages/web/Dockerfile
+      args:
+        NEXT_PUBLIC_BASE_URL:      ${NEXT_PUBLIC_BASE_URL}
+        NEXT_PUBLIC_REST_API_URL:  ${NEXT_PUBLIC_REST_API_URL}
+        NEXT_PUBLIC_WS_BASE_URL:   ${NEXT_PUBLIC_WS_BASE_URL}
+    container_name: stockx-web
+    env_file: .env
+    environment:
+      PORT: 3000
+      # Internal Docker network URL for server-side API calls (e.g. pingApiNewUser)
+      # This is different from NEXT_PUBLIC_REST_API_URL which is the browser-facing URL.
+      INTERNAL_API_URL: http://api-gateway:3001/api/v1
+    ports:
+      - "127.0.0.1:13000:3000"
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks:
+      - stockx
+
+networks:
+  stockx:
+    driver: bridge
+
+volumes:
+  pg_data:
