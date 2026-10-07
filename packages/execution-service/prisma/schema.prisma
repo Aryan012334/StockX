@@ -1,0 +1,278 @@
+// StockX — Prisma Schema
+// Plain PostgreSQL (no TimescaleDB extensions required)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// AUTH
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+
+  accounts      Account[]
+  wallet        Wallet?
+  orders        Order[]
+  holdings      Holding[]
+  watchlist     Watchlist[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// ---------------------------------------------------------------------------
+// STOCK SERVICE — tradeable instruments
+// ---------------------------------------------------------------------------
+
+model Stock {
+  symbol      String      @id            // e.g. "AAPL", "MSFT"
+  companyName String
+  sector      String?
+  status      StockStatus @default(ACTIVE)
+  baseAsset   String                     // same as symbol
+  quoteAsset  String      @default("USD")
+
+  orders      Order[]
+  holdings    Holding[]
+  watchlist   Watchlist[]
+  quote       MarketQuote?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+enum StockStatus {
+  ACTIVE
+  DELISTED
+}
+
+// ---------------------------------------------------------------------------
+// MARKET QUOTE CACHE — external price data (Twelve Data / any provider)
+// ---------------------------------------------------------------------------
+
+model MarketQuote {
+  symbol           String   @id
+  stock            Stock    @relation(fields: [symbol], references: [symbol])
+
+  // Reference market price from external provider
+  price            Decimal  @default(0)
+  previousClose    Decimal  @default(0)
+  open             Decimal  @default(0)
+  dayHigh          Decimal  @default(0)
+  dayLow           Decimal  @default(0)
+  volume           Decimal  @default(0)
+  change           Decimal  @default(0)
+  changePercent    Decimal  @default(0)
+
+  // Data quality indicators
+  isDelayed        Boolean  @default(true)  // false = real-time
+  updatedAt        DateTime @default(now())
+
+  @@index([updatedAt])
+}
+
+// ---------------------------------------------------------------------------
+// WALLET — user funds and holdings (cash)
+// ---------------------------------------------------------------------------
+
+model Wallet {
+  userId          String    @id
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance         Decimal   @default(50000)   // available cash (USD)
+  lockedBalance   Decimal   @default(0)       // cash locked in open BUY orders
+  // assetsHeld: JSON snapshot for the Matcher's in-memory warmup.
+  // The canonical holding record is the Holding table.
+  // This JSON is updated by the Execution Service on every fill.
+  assetsHeld      Json      @default("{}")    // { "AAPL": 10, "MSFT": 5 }
+  transactions    Transaction[]
+  updatedAt       DateTime? @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// HOLDINGS — per-user stock positions with cost basis
+// ---------------------------------------------------------------------------
+
+model Holding {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol           String
+  stock            Stock    @relation(fields: [symbol], references: [symbol])
+
+  quantity         Decimal  @default(0)  // total shares held
+  lockedQuantity   Decimal  @default(0)  // shares locked in open SELL orders
+  averageCost      Decimal  @default(0)  // weighted-average cost per share
+  realizedPnl      Decimal  @default(0)  // cumulative realized P&L from closed positions
+
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// WATCHLIST — per-user stock watchlist
+// ---------------------------------------------------------------------------
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  stock     Stock    @relation(fields: [symbol], references: [symbol])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// ORDER SERVICE — durable order store
+// ---------------------------------------------------------------------------
+
+model Order {
+  id               String      @id @default(uuid())
+  userId           String
+  user             User        @relation(fields: [userId], references: [id])
+  symbol           String
+  stock            Stock       @relation(fields: [symbol], references: [symbol])
+  side             OrderSide
+  orderType        OrderType
+  price            Decimal                          // limit price (0 for market)
+  quantity         Decimal
+  filledQty        Decimal     @default(0)
+  remainingQty     Decimal
+  averageFillPrice Decimal     @default(0)          // weighted avg of fills
+  status           OrderStatus @default(OPEN)
+  exchangeOrderId  String?
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([symbol, status])
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+}
+
+enum OrderStatus {
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+// ---------------------------------------------------------------------------
+// MATCH EXECUTION SERVICE — settlement records + idempotency
+// ---------------------------------------------------------------------------
+
+model MatchExecution {
+  matchId       String    @id
+  buyOrderId    String
+  sellOrderId   String
+  symbol        String
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  buyerId       String
+  sellerId      String
+  isBuyerMaker  Boolean
+
+  status        SettlementStatus @default(SETTLED)
+  settledAt     DateTime         @default(now())
+}
+
+enum SettlementStatus {
+  SETTLED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// PUBLIC TRADE FEED
+// ---------------------------------------------------------------------------
+
+model Trade {
+  id            String   @id @default(uuid())
+  symbol        String                          // e.g. "AAPL_USD"
+  price         Decimal
+  quantity      Decimal
+  quoteQuantity Decimal
+  isBuyerMaker  Boolean
+  timestamp     DateTime @default(now())
+
+  @@index([symbol, timestamp(sort: Desc)])
+}
+
+// ---------------------------------------------------------------------------
+// WALLET TRANSACTIONS — full audit log
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id           String              @id @default(cuid())
+  walletId     String
+  wallet       Wallet              @relation(fields: [walletId], references: [userId], onDelete: Cascade)
+  type         TransactionType
+  category     TransactionCategory
+  description  String
+  amount       Decimal
+  balanceAfter Decimal
+  ticker       String?
+  quantity     Decimal?
+  price        Decimal?
+  createdAt    DateTime            @default(now())
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionCategory {
+  SIGNUP_BONUS
+  ORDER_BUY
+  ORDER_SELL
+  DEPOSIT
+  WITHDRAWAL
+  ORDER_BUY_REFUND       // released lock on cancel
+  ORDER_SELL_REFUND      // released shares on cancel
+}
