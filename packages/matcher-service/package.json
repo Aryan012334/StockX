@@ -1,0 +1,21 @@
+{
+  "name": "@stockx/matcher-service",
+  "version": "1.0.0",
+  "description": "Matcher Service — in-memory order books, price-time priority matching, match event publishing",
+  "license": "ISC",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@stockx/execution-service": "*",
+    "@stockx/shared": "*",
+    "dotenv": "^17.4.2",
+    "redis": "^5.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.35",
+    "typescript": "^5.3.3"
+  }
+}
