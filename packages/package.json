@@ -1,0 +1,25 @@
+{
+  "name": "stockx",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "api-gateway",
+    "matcher-service",
+    "realtime-service",
+    "shared",
+    "execution-service"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspaces",
+    "db:generate": "npm run db:generate --workspace=execution-service",
+    "db:push": "npm run db:push --workspace=execution-service",
+    "db:migrate": "npm run db:migrate --workspace=execution-service",
+    "db:studio": "npm run db:studio --workspace=execution-service"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.0"
+  }
+}
