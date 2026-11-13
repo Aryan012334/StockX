@@ -86,28 +86,67 @@ orderRouter.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to reserve funds/shares" });
   }
 
-  // Persist order as OPEN before sending to matcher — ensures durability
+  // -------------------------------------------------------------------------
+  // TRANSACTIONAL OUTBOX — atomic write of Order + OutboxEvent
+  //
+  // Both writes happen in one PostgreSQL transaction.
+  // If either fails, both roll back — no partial state.
+  // The OutboxWorker (outboxWorker.ts) reads OutboxEvent and delivers
+  // to Redis with retries. This eliminates the dual-write problem:
+  //   OLD: DB write succeeds → Redis push fails → order lost forever
+  //   NEW: Both in one tx → OutboxWorker retries delivery until Redis confirms
+  // -------------------------------------------------------------------------
+  const matcherMessage = {
+    clientId: randomUUID(), // correlation ID for the response channel
+    message: {
+      type: CREATE_ORDER,
+      data: { symbol, price, quantity, side, userId, orderType, orderId },
+    },
+  };
+
   try {
-    await prisma.order.create({
-      data: {
-        id:           orderId,
-        userId,
-        symbol:       baseSymbol,
-        side:         side.toUpperCase() as "BUY" | "SELL",
-        orderType:    orderType.toUpperCase() as "LIMIT" | "MARKET",
-        price:        Number(price),
-        quantity:     Number(quantity),
-        filledQty:    0,
-        remainingQty: Number(quantity),
-        status:       "OPEN",
-      },
-    });
+    await prisma.$transaction([
+      prisma.order.create({
+        data: {
+          id:           orderId,
+          userId,
+          symbol:       baseSymbol,
+          side:         side.toUpperCase() as "BUY" | "SELL",
+          orderType:    orderType.toUpperCase() as "LIMIT" | "MARKET",
+          price:        Number(price),
+          quantity:     Number(quantity),
+          filledQty:    0,
+          remainingQty: Number(quantity),
+          status:       "OPEN",
+        },
+      }),
+      prisma.outboxEvent.create({
+        data: {
+          eventType: CREATE_ORDER,
+          payload:   matcherMessage as any,
+          status:    "PENDING",
+        },
+      }),
+    ]);
   } catch (dbErr) {
-    console.error("[Order] Failed to persist order:", dbErr);
+    // Roll back fund reservation on transaction failure
+    if (side === "buy") {
+      await prisma.wallet.update({
+        where: { userId },
+        data:  { lockedBalance: { decrement: Number(price) * Number(quantity) } },
+      }).catch(() => {});
+    } else {
+      await prisma.holding.update({
+        where: { userId_symbol: { userId, symbol: baseSymbol } },
+        data:  { lockedQuantity: { decrement: Number(quantity) } },
+      }).catch(() => {});
+    }
+    console.error("[Order] Atomic write failed:", dbErr);
     return res.status(500).json({ error: "Failed to persist order" });
   }
 
-  // Forward to Matcher Service via Exchange Gateway
+  // Also send directly via ExchangeGateway for immediate response
+  // (OutboxWorker is the reliable fallback if this fails)
   try {
     const response = await ExchangeGateway.getInstance().send({
       type: CREATE_ORDER,
@@ -115,27 +154,40 @@ orderRouter.post("/", async (req, res) => {
     });
 
     if (response.type === "ORDER_PLACED") {
-      // exchangeOrderId: the ID the exchange confirmed for this order.
-      // In this single-deployment setup the exchange uses the same UUID
-      // the Order Service generated, but we record it explicitly so the
-      // Order DB has both fields — matching the CortexCookie concept of
-      // tracking the local order ID and the exchange order ID separately.
       const exchangeOrderId = response.payload.orderId;
       await prisma.order.update({
         where: { id: orderId },
         data:  { exchangeOrderId },
       }).catch((e) => console.error("[Order] Failed to store exchangeOrderId:", e));
+
+      // Mark outbox event as delivered since direct send succeeded
+      await prisma.outboxEvent.updateMany({
+        where: {
+          eventType: CREATE_ORDER,
+          status:    "PENDING",
+          payload:   { path: ["message", "data", "orderId"], equals: orderId },
+        },
+        data: { status: "DELIVERED", processedAt: new Date() },
+      }).catch(() => {});
     }
 
     return res.status(201).json(response.payload);
   } catch (err) {
-    // Matcher failed — mark the order cancelled so the DB stays consistent
+    // Direct send failed — OutboxWorker will retry delivery
+    // Order is already persisted, so return a pending response
+    console.warn("[Order] Direct send failed — OutboxWorker will retry:", err);
     await prisma.order.update({
       where: { id: orderId },
-      data:  { status: "CANCELLED" },
+      data:  { status: "OPEN" },
     }).catch(() => {});
-    console.error("[Order] Matcher error:", err);
-    return res.status(500).json({ error: "Matcher Service error" });
+    return res.status(202).json({
+      orderId,
+      executedQty:   0,
+      remainingQty:  Number(quantity),
+      restingOnBook: false,
+      fills:         [],
+      note: "Order queued — will be processed shortly",
+    });
   }
 });
 
