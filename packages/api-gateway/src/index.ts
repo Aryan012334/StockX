@@ -30,6 +30,7 @@ import { newUserRouter }              from "./routes/newUser.js";
 import { marketRouter }               from "./routes/market.js";
 import { holdingsRouter, walletRouter, watchlistRouter } from "./routes/holdings.js";
 import { startMarketDataRefreshLoop } from "./marketData/provider.js";
+import { startOrderExpiryScheduler }  from "./orderExpiry.js";
 
 const app  = express();
 const PORT = process.env.PORT ?? 3001;
@@ -42,6 +43,9 @@ await ExchangeGateway.getInstance().connect();
 
 // Start background market data refresh (15-min batch)
 startMarketDataRefreshLoop();
+
+// Start order expiry scheduler (fires at 4PM ET daily)
+startOrderExpiryScheduler();
 
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "api-gateway" }));
