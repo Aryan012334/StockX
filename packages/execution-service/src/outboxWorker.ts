@@ -89,6 +89,14 @@ async function main() {
             console.error(
               `[OutboxWorker] Event ${event.id} (${event.eventType}) failed after ${MAX_RETRIES} retries — marked FAILED (DLQ)`,
             );
+            // Push to DLQ Redis list for manual inspection/replay
+            await redis.lPush("dlq:outbox", JSON.stringify({
+              eventId:   event.id,
+              eventType: event.eventType,
+              payload:   event.payload,
+              error:     err instanceof Error ? err.message : String(err),
+              failedAt:  new Date().toISOString(),
+            }));
           }
         }
       }

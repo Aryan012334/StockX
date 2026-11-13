@@ -50,6 +50,25 @@ startOrderExpiryScheduler();
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "api-gateway" }));
 
+// DLQ inspection endpoint — shows failed events for manual review/replay
+app.get("/admin/dlq", async (_req, res) => {
+  try {
+    const { createClient } = await import("redis");
+    const redis = createClient({ url: process.env.REDIS_URL ?? "redis://redis:6379" });
+    await redis.connect();
+    const matchesDlq = await redis.lRange("dlq:matches", 0, -1);
+    const outboxDlq  = await redis.lRange("dlq:outbox",  0, -1);
+    await redis.quit();
+    return res.json({
+      "dlq:matches": matchesDlq.map((m) => JSON.parse(m)),
+      "dlq:outbox":  outboxDlq.map((m)  => JSON.parse(m)),
+      total: matchesDlq.length + outboxDlq.length,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: "Failed to read DLQ" });
+  }
+});
+
 // Routes
 app.use("/api/v1/stocks",     stocksRouter);
 app.use("/api/v1/market",     marketRouter);

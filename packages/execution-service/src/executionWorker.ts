@@ -324,6 +324,25 @@ async function handleMatchCreated(d: MatchCreatedData) {
       console.log(`[Execution] Match ${matchId} already settled — skipping (idempotent)`);
     } else {
       console.error(`[Execution] Settlement failed for match ${matchId}:`, err);
+      // Push to Dead Letter Queue for manual inspection / replay
+      try {
+        const dlqClient = createClient({ url: process.env.REDIS_URL ?? "redis://redis:6379" });
+        await dlqClient.connect();
+        await dlqClient.lPush("dlq:matches", JSON.stringify({
+          matchId,
+          symbol,
+          price,
+          quantity,
+          buyerId,
+          sellerId,
+          error:    err?.message ?? String(err),
+          failedAt: new Date().toISOString(),
+        }));
+        await dlqClient.quit();
+        console.log(`[Execution] Match ${matchId} pushed to DLQ for manual replay`);
+      } catch (dlqErr) {
+        console.error(`[Execution] Failed to push to DLQ:`, dlqErr);
+      }
     }
   }
 }
