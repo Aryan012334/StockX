@@ -51,30 +51,28 @@ export class Orderbook {
   // Insert helpers — maintain sorted order at insertion time
   // -------------------------------------------------------------------------
 
-  private insertBid(order: Order) {
+  insertBid(order: Omit<Order, "seq">) {
+    const fullOrder: Order = { ...order, seq: ++globalSeq };
     let i = 0;
     while (
       i < this.bids.length &&
-      (this.bids[i]!.price > order.price ||
-        (this.bids[i]!.price === order.price &&
-          this.bids[i]!.seq < order.seq))
-    ) {
-      i++;
-    }
-    this.bids.splice(i, 0, order);
+      (this.bids[i]!.price > fullOrder.price ||
+        (this.bids[i]!.price === fullOrder.price &&
+          this.bids[i]!.seq < fullOrder.seq))
+    ) { i++; }
+    this.bids.splice(i, 0, fullOrder);
   }
 
-  private insertAsk(order: Order) {
+  insertAsk(order: Omit<Order, "seq">) {
+    const fullOrder: Order = { ...order, seq: ++globalSeq };
     let i = 0;
     while (
       i < this.asks.length &&
-      (this.asks[i]!.price < order.price ||
-        (this.asks[i]!.price === order.price &&
-          this.asks[i]!.seq < order.seq))
-    ) {
-      i++;
-    }
-    this.asks.splice(i, 0, order);
+      (this.asks[i]!.price < fullOrder.price ||
+        (this.asks[i]!.price === fullOrder.price &&
+          this.asks[i]!.seq < fullOrder.seq))
+    ) { i++; }
+    this.asks.splice(i, 0, fullOrder);
   }
 
   // -------------------------------------------------------------------------

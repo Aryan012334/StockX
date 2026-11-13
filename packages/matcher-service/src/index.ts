@@ -33,6 +33,16 @@ async function main() {
   // Warm in-memory wallet state from Postgres
   await engine.loadAllWallets();
 
+  // -------------------------------------------------------------------------
+  // ORDER BOOK RECOVERY — replay all OPEN orders from DB into memory
+  //
+  // When the Matcher restarts, the in-memory order books are empty.
+  // Any orders with status=OPEN in the DB are still resting — we must
+  // reload them so they participate in future matches.
+  // Without this, OPEN orders are stuck in the DB forever after a restart.
+  // -------------------------------------------------------------------------
+  await engine.recoverOpenOrders();
+
   const redis = RedisManager.getInstance();
 
   // -------------------------------------------------------------------------

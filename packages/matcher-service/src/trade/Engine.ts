@@ -103,8 +103,56 @@ export class Engine {
   }
 
   // -------------------------------------------------------------------------
-  // Startup: load all wallets from Postgres into memory
+  // Startup: recover open orders from Postgres into in-memory order books
   // -------------------------------------------------------------------------
+
+  async recoverOpenOrders(): Promise<void> {
+    try {
+      const openOrders = await prisma.order.findMany({
+        where:   { status: { in: ["OPEN", "PARTIALLY_FILLED"] } },
+        orderBy: { createdAt: "asc" }, // preserve time priority
+        include: { stock: true },
+      });
+
+      if (openOrders.length === 0) {
+        console.log("[Engine] No open orders to recover");
+        return;
+      }
+
+      let recovered = 0;
+      for (const o of openOrders) {
+        try {
+          const symbol    = `${o.stock.symbol}_${o.stock.quoteAsset}`;
+          const orderbook = this.getOrCreateOrderbook(symbol);
+          const remaining = Number(o.quantity) - Number(o.filledQty);
+          if (remaining <= 0) continue;
+
+          const order: Omit<Order, "seq"> = {
+            price:    Number(o.price),
+            quantity: remaining,
+            orderId:  o.id,
+            filled:   0,
+            side:     o.side.toLowerCase() as "buy" | "sell",
+            userId:   o.userId,
+          };
+
+          // Insert directly into the book without matching (recovery, not new order)
+          if (order.side === "buy") {
+            orderbook.insertBid(order);
+          } else {
+            orderbook.insertAsk(order);
+          }
+          recovered++;
+        } catch (err) {
+          console.error(`[Engine] Failed to recover order ${o.id}:`, err);
+        }
+      }
+
+      console.log(`[Engine] Recovered ${recovered}/${openOrders.length} open orders into order books`);
+    } catch (err) {
+      console.error("[Engine] Order recovery failed:", err);
+    }
+  }
 
   async loadAllWallets(): Promise<void> {
     try {
