@@ -239,6 +239,17 @@ exports.Prisma.TradeScalarFieldEnum = {
   timestamp: 'timestamp'
 };
 
+exports.Prisma.OutboxEventScalarFieldEnum = {
+  id: 'id',
+  eventType: 'eventType',
+  payload: 'payload',
+  status: 'status',
+  createdAt: 'createdAt',
+  processedAt: 'processedAt',
+  retries: 'retries',
+  error: 'error'
+};
+
 exports.Prisma.TransactionScalarFieldEnum = {
   id: 'id',
   walletId: 'walletId',
@@ -305,6 +316,12 @@ exports.SettlementStatus = exports.$Enums.SettlementStatus = {
   FAILED: 'FAILED'
 };
 
+exports.OutboxStatus = exports.$Enums.OutboxStatus = {
+  PENDING: 'PENDING',
+  DELIVERED: 'DELIVERED',
+  FAILED: 'FAILED'
+};
+
 exports.TransactionType = exports.$Enums.TransactionType = {
   CREDIT: 'CREDIT',
   DEBIT: 'DEBIT'
@@ -331,6 +348,7 @@ exports.Prisma.ModelName = {
   Order: 'Order',
   MatchExecution: 'MatchExecution',
   Trade: 'Trade',
+  OutboxEvent: 'OutboxEvent',
   Transaction: 'Transaction'
 };
 

@@ -244,8 +244,31 @@ model Trade {
 }
 
 // ---------------------------------------------------------------------------
-// WALLET TRANSACTIONS — full audit log
+// TRANSACTIONAL OUTBOX — eliminates dual write problem
+//
+// Instead of writing to DB + pushing to Redis separately (which can fail
+// independently), we write Order + OutboxEvent in one atomic transaction.
+// The OutboxWorker polls this table and delivers events to Redis reliably.
 // ---------------------------------------------------------------------------
+
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  eventType   String                          // "CREATE_ORDER" | "CANCEL_ORDER" etc
+  payload     Json                            // full message payload
+  status      OutboxStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  retries     Int       @default(0)
+  error       String?
+
+  @@index([status, createdAt])
+}
+
+enum OutboxStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
 
 model Transaction {
   id           String              @id @default(cuid())
