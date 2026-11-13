@@ -99,6 +99,20 @@ services:
     networks:
       - stockx
 
+  # Outbox Worker — delivers OutboxEvent rows to Redis (Transactional Outbox pattern)
+  outbox-worker:
+    build:
+      context:    .
+      dockerfile: packages/execution-service/Dockerfile.outbox
+    container_name: stockx-outbox-worker
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    networks:
+      - stockx
+
   realtime-service:
     build:
       context:    .
