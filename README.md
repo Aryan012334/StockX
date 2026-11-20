@@ -2,6 +2,20 @@
 
 > A full-stack stock exchange simulator with a live in-memory matching engine, atomic settlement, real-time WebSocket order book, and production-grade reliability patterns — built to demonstrate how real electronic exchanges work.
 
+## Screenshots
+
+| Landing | Markets |
+|---|---|
+| ![Landing](image/01-landing.png) | ![Markets](image/04-markets.png) |
+
+| Trade (Order Entry) | Portfolio |
+|---|---|
+| ![Trade](image/05-trade.png) | ![Portfolio](image/06-portfolio.png) |
+
+| Wallet | Sign Up |
+|---|---|
+| ![Wallet](image/07-wallet.png) | ![Signup](image/02-signup.png) |
+
 ---
 
 ## Table of Contents
